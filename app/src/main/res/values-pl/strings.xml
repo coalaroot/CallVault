@@ -779,6 +779,11 @@
     <string name="transcription_minute_label">Minuta</string>
     <string name="transcription_mode_after_each_call">Po każdej rozmowie</string>
     <string name="transcription_mode_automatic">Według harmonogramu</string>
+    <string name="transcription_sim_all">Wszystkie SIM</string>
+    <string name="transcription_sim_info">Po zakończeniu transkrybowane są tylko połączenia z wybranej SIM. Połączenie z drugiej SIM można zachować lub usunąć. Jeśli nie da się rozpoznać SIM, połączenie jest transkrybowane i zachowane.</string>
+    <string name="transcription_sim_label">Transkrybuj po każdej rozmowie tylko dla</string>
+    <string name="transcription_sim_other_delete">Usuń nagranie</string>
+    <string name="transcription_sim_other_label">Dla połączeń z drugiej SIM</string>
     <string name="transcription_mode_label">Transkrybuj</string>
     <string name="transcription_mode_manual">Ręcznie</string>
     <string name="transcription_model_best">Najlepsza jakość</string>

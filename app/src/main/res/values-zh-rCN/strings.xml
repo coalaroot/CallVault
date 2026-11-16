@@ -773,6 +773,11 @@
     <string name="transcription_minute_label">分钟</string>
     <string name="transcription_mode_after_each_call">每次通话后</string>
     <string name="transcription_mode_automatic">定时</string>
+    <string name="transcription_sim_all">全部 SIM</string>
+    <string name="transcription_sim_info">仅所选 SIM 上的通话在结束后转写。另一张 SIM 上的通话可以保留或删除。如果无法识别 SIM，通话会照常转写并保留。</string>
+    <string name="transcription_sim_label">每次通话结束后仅转写</string>
+    <string name="transcription_sim_other_delete">删除录音</string>
+    <string name="transcription_sim_other_label">另一张 SIM 上的通话</string>
     <string name="transcription_mode_label">转写方式</string>
     <string name="transcription_mode_manual">手动</string>
     <string name="transcription_model_best">最佳质量</string>

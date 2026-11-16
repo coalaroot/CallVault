@@ -773,6 +773,11 @@
     <string name="transcription_minute_label">Phút</string>
     <string name="transcription_mode_after_each_call">Sau mỗi cuộc gọi</string>
     <string name="transcription_mode_automatic">Theo lịch</string>
+    <string name="transcription_sim_all">Mọi SIM</string>
+    <string name="transcription_sim_info">Chỉ cuộc gọi trên SIM đã chọn được chép lời khi kết thúc. Cuộc gọi trên SIM còn lại có thể được giữ hoặc xóa. Nếu không nhận ra SIM, cuộc gọi được chép lời và được giữ.</string>
+    <string name="transcription_sim_label">Chép lời sau mỗi cuộc gọi chỉ cho</string>
+    <string name="transcription_sim_other_delete">Xóa bản ghi</string>
+    <string name="transcription_sim_other_label">Với cuộc gọi trên SIM còn lại</string>
     <string name="transcription_mode_label">Chuyển lời nói thành văn bản</string>
     <string name="transcription_mode_manual">Thủ công</string>
     <string name="transcription_model_best">Chất lượng tốt nhất</string>

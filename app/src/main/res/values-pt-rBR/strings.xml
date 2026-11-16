@@ -778,6 +778,11 @@
     <string name="transcription_minute_label">Minuto</string>
     <string name="transcription_mode_after_each_call">Após cada chamada</string>
     <string name="transcription_mode_automatic">Agendado</string>
+    <string name="transcription_sim_all">Todos os SIMs</string>
+    <string name="transcription_sim_info">Somente as chamadas do SIM escolhido são transcritas ao terminar. Uma chamada no outro SIM pode ser mantida ou excluída. Se o SIM não puder ser identificado, a chamada é transcrita e mantida.</string>
+    <string name="transcription_sim_label">Transcrever após cada chamada apenas para</string>
+    <string name="transcription_sim_other_delete">Excluir a gravação</string>
+    <string name="transcription_sim_other_label">Para chamadas no outro SIM</string>
     <string name="transcription_mode_label">Transcrever</string>
     <string name="transcription_mode_manual">Manualmente</string>
     <string name="transcription_model_best">Melhor qualidade</string>

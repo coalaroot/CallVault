@@ -25,8 +25,6 @@ import android.telephony.PhoneNumberUtils
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import com.baba.callvault.data.AppPreferences
-import com.baba.callvault.data.calls.PhoneCallMatch
-import com.baba.callvault.data.calls.PhoneCallReader
 import com.baba.callvault.data.calls.SimLabels
 import com.baba.callvault.data.health.CallOutcomes
 import com.baba.callvault.data.health.SetupFingerprint
@@ -37,6 +35,7 @@ import com.baba.callvault.server.RecorderBackend
 import com.baba.callvault.R
 import com.baba.callvault.data.recordings.RecordingCatalog
 import com.baba.callvault.data.waveform.WaveformDrawWorker
+import com.baba.callvault.transcription.AfterCallSimGate
 import com.baba.callvault.transcription.TranscriptionScheduler
 import com.baba.callvault.data.recordings.RecordingDirection
 import com.baba.callvault.data.transcripts.SpeakerTurnsRepository
@@ -927,9 +926,18 @@ class RecordingForegroundService : Service() {
         } else if (uriToRename != null) {
             // Phone number was already known at recording start — no rename needed.
             // Route the file with its current name immediately (once).
-            routeFinalRecording(
-                uriToRename, mimeType, activeSession.lastCapturedByteCount, originalMetadata?.direction, mix
-            )
+            // Deleting the other SIM's recording waits on the call log, which is written only after
+            // the call ends. That wait must not run on this thread; everyone else stays here.
+            val route = {
+                routeFinalRecording(
+                    uriToRename, mimeType, activeSession.lastCapturedByteCount, originalMetadata?.direction, mix
+                )
+            }
+            if (AfterCallSimGate.mayBlockForDelete(applicationContext)) {
+                CoroutineScope(Dispatchers.IO).launch { route() }
+            } else {
+                route()
+            }
         }
         // A capture AudioFlinger invalidated mid-call can leave the microphone indicator on with nothing recording;
         // a few seconds from now this looks, and replaces the daemon if it is safe to. See [MicOpAutoHeal].
@@ -1080,10 +1088,7 @@ class RecordingForegroundService : Service() {
     /** The 1-based SIM slot of the call that started at [startedAt], when the opt-in SIM label is on; else null. */
     private fun simSlotFor(startedAt: Long): Int? {
         if (!AppPreferences(applicationContext).isShowSimLabelEnabled()) return null
-        val calls = PhoneCallReader.since(applicationContext, startedAt - PhoneCallMatch.TOLERANCE_MS)
-        val call = PhoneCallMatch.nearest(calls, startedAt) ?: return null
-        return SimLabels.Resolver(applicationContext, getString(R.string.sim_label_word))
-            .simFor(call.accountComponent, call.accountId)?.slot
+        return SimLabels.slotForCall(applicationContext, startedAt, getString(R.string.sim_label_word))
     }
 
     /**
@@ -1153,6 +1158,15 @@ class RecordingForegroundService : Service() {
                 // It is logged, so a support question about a missing recording is still answerable.
                 return
             }
+        }
+
+        // Per-SIM after-call transcription (issue #81). Before the catalog, the keep-or-delete
+        // question and the cloud copy: a recording removed here must not be uploaded or asked about.
+        // Off unless the user picked one SIM and "delete the other", so this returns immediately
+        // for everyone else.
+        if (AfterCallSimGate.shouldDelete(applicationContext, name)) {
+            SafHelper.deleteDocument(doc, "the recording '$name' on the other SIM")
+            return
         }
 
         // Keep or delete after the call: decided ONCE, here, and both halves below follow it — the catalog

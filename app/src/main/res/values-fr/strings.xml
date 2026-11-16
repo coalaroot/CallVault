@@ -775,6 +775,11 @@
     <string name="transcription_minute_label">Minute</string>
     <string name="transcription_mode_after_each_call">Après chaque appel</string>
     <string name="transcription_mode_automatic">Planifié</string>
+    <string name="transcription_sim_all">Toutes les SIM</string>
+    <string name="transcription_sim_info">Seuls les appels de la SIM choisie sont transcrits à la fin. Un appel sur l\'autre SIM peut être gardé ou supprimé. Si la SIM ne peut pas être reconnue, l\'appel est transcrit et gardé.</string>
+    <string name="transcription_sim_label">Transcrire après chaque appel seulement pour</string>
+    <string name="transcription_sim_other_delete">Supprimer l\'enregistrement</string>
+    <string name="transcription_sim_other_label">Pour les appels de l\'autre SIM</string>
     <string name="transcription_mode_label">Transcrire</string>
     <string name="transcription_mode_manual">Manuellement</string>
     <string name="transcription_model_best">Meilleure qualité</string>

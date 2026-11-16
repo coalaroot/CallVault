@@ -787,6 +787,11 @@
     <string name="transcription_minute_label">Хвилина</string>
     <string name="transcription_mode_after_each_call">Після кожного дзвінка</string>
     <string name="transcription_mode_automatic">За розкладом</string>
+    <string name="transcription_sim_all">Усі SIM</string>
+    <string name="transcription_sim_info">Після завершення розшифровуються лише дзвінки обраної SIM. Дзвінок з іншої SIM можна залишити або видалити. Якщо SIM не вдалося визначити, дзвінок розшифровується і зберігається.</string>
+    <string name="transcription_sim_label">Розшифровувати після кожного дзвінка лише для</string>
+    <string name="transcription_sim_other_delete">Видалити запис</string>
+    <string name="transcription_sim_other_label">Для дзвінків з іншої SIM</string>
     <string name="transcription_mode_label">Розпізнавання мовлення</string>
     <string name="transcription_mode_manual">Вручну</string>
     <string name="transcription_model_best">Найкраща якість</string>

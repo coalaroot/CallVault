@@ -104,6 +104,9 @@ class SettingDecisionsTest {
         "transcription_model_id" to Decision(Wizard(WizardStep.TRANSCRIPTION)),
         "transcription_language" to Decision(Wizard(WizardStep.TRANSCRIPTION)),
         "transcription_ask_language" to Decision(SettingsOnly("for multilingual phones, after the pin is chosen")),
+        // Issue #81. Hidden unless the phone has two SIMs and transcription runs after each call.
+        "transcription_after_call_sim" to Decision(SettingsOnly("only matters on dual-SIM phones, and only for after-each-call; all SIMs by default")),
+        "transcription_other_sim" to Decision(SettingsOnly("only matters once a single SIM is chosen; keep by default")),
         "summary_confirm_requirements" to Decision(SettingsOnly("asked at the first summary instead")),
         "summary_language" to Decision(SettingsOnly("follows the transcription language")),
         // App (VoIP) calls

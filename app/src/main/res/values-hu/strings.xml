@@ -775,6 +775,11 @@
     <string name="transcription_minute_label">Perc</string>
     <string name="transcription_mode_after_each_call">Minden hívás után</string>
     <string name="transcription_mode_automatic">Ütemezve</string>
+    <string name="transcription_sim_all">Minden SIM</string>
+    <string name="transcription_sim_info">Csak a kiválasztott SIM hívásai kerülnek átírásra a végén. A másik SIM hívása megőrizhető vagy törölhető. Ha a SIM nem azonosítható, a hívás átírásra kerül és megmarad.</string>
+    <string name="transcription_sim_label">Átírás minden hívás után csak ennél</string>
+    <string name="transcription_sim_other_delete">Felvétel törlése</string>
+    <string name="transcription_sim_other_label">A másik SIM hívásaira</string>
     <string name="transcription_mode_label">Átírás</string>
     <string name="transcription_mode_manual">Kézzel</string>
     <string name="transcription_model_best">Legjobb minőség</string>
