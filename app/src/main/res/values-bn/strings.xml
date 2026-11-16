@@ -469,6 +469,11 @@
     <string name="transcription_mode_manual">নিজে চালু করলে</string>
     <string name="transcription_mode_after_each_call">প্রতিটি কলের পরে</string>
     <string name="transcription_mode_automatic">নির্ধারিত সময়ে</string>
+    <string name="transcription_sim_all">সব সিম</string>
+    <string name="transcription_sim_info">শেষে শুধু বেছে নেওয়া সিমের কল প্রতিলিপি হয়। অন্য সিমের কল রাখা বা মুছে ফেলা যায়। সিম চেনা না গেলে কল প্রতিলিপি হয় এবং থেকে যায়।</string>
+    <string name="transcription_sim_label">প্রতিটি কলের পরে শুধু এটার জন্য প্রতিলিপি</string>
+    <string name="transcription_sim_other_delete">রেকর্ডিং মুছুন</string>
+    <string name="transcription_sim_other_label">অন্য সিমের কলের জন্য</string>
     <string name="transcription_hour_label">ঘণ্টা</string>
     <string name="transcription_minute_label">মিনিট</string>
     <string name="transcription_time_label">চালানোর সময়</string>

@@ -614,6 +614,11 @@
     <string name="transcription_mode_manual">Manually</string>
     <string name="transcription_mode_after_each_call">After each call</string>
     <string name="transcription_mode_automatic">Scheduled</string>
+    <string name="transcription_sim_all">All SIMs</string>
+    <string name="transcription_sim_info">Only calls on the chosen SIM are transcribed when they end. A call on the other SIM can be kept or deleted. If the SIM cannot be identified, the call is transcribed and kept.</string>
+    <string name="transcription_sim_label">Transcribe after each call only for</string>
+    <string name="transcription_sim_other_delete">Delete the recording</string>
+    <string name="transcription_sim_other_label">For calls on the other SIM</string>
     <string name="transcription_hour_label">Hour</string>
     <string name="transcription_minute_label">Minute</string>
     <string name="transcription_time_label">Run at</string>

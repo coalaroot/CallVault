@@ -174,6 +174,7 @@ object SettingsGroups {
         SettingsGroup.WHEN_TO_TRANSCRIBE -> listOf(
             "transcription_mode", "transcription_hour", "transcription_minute",
             "transcription_requires_charging", "transcription_batch_limit", "transcription_confirm_before_run",
+            "transcription_after_call_sim", "transcription_other_sim",
         )
         SettingsGroup.SUMMARIES -> listOf("summary_confirm_requirements")
         SettingsGroup.APP -> listOf("theme_mode", "dynamic_color", "show_toasts", "update_check_enabled")

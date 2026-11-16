@@ -868,6 +868,11 @@
     <string name="transcription_minute_label">دقیقه</string>
     <string name="transcription_mode_after_each_call">پس از هر تماس</string>
     <string name="transcription_mode_automatic">زمان‌بندی‌شده</string>
+    <string name="transcription_sim_all">همه سیم‌کارت‌ها</string>
+    <string name="transcription_sim_info">فقط تماس‌های سیم‌کارت انتخاب‌شده پس از پایان رونویسی می‌شوند. تماس سیم‌کارت دیگر را می‌توان نگه داشت یا حذف کرد. اگر سیم‌کارت شناسایی نشود، تماس رونویسی و نگه داشته می‌شود.</string>
+    <string name="transcription_sim_label">رونویسی پس از هر تماس فقط برای</string>
+    <string name="transcription_sim_other_delete">حذف ضبط</string>
+    <string name="transcription_sim_other_label">برای تماس‌های سیم‌کارت دیگر</string>
     <string name="transcription_mode_label">رونویسی</string>
     <string name="transcription_mode_manual">دستی</string>
     <string name="transcription_model_best">بهترین کیفیت</string>

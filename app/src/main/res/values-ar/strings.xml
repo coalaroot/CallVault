@@ -815,6 +815,11 @@
     <string name="transcription_minute_label">دقيقة</string>
     <string name="transcription_mode_after_each_call">بعد كل مكالمة</string>
     <string name="transcription_mode_automatic">مجدول</string>
+    <string name="transcription_sim_all">كل شرائح SIM</string>
+    <string name="transcription_sim_info">تُنسخ عند الانتهاء مكالمات الشريحة المختارة فقط. يمكن الإبقاء على مكالمة الشريحة الأخرى أو حذفها. إذا تعذر تحديد الشريحة، تُنسخ المكالمة ويُبقى عليها.</string>
+    <string name="transcription_sim_label">انسخ بعد كل مكالمة فقط لـ</string>
+    <string name="transcription_sim_other_delete">حذف التسجيل</string>
+    <string name="transcription_sim_other_label">لمكالمات الشريحة الأخرى</string>
     <string name="transcription_mode_label">تفريغ صوتي</string>
     <string name="transcription_mode_manual">يدويًا</string>
     <string name="transcription_model_best">أعلى جودة (موصى به)</string>

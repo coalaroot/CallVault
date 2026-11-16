@@ -779,6 +779,11 @@
     <string name="transcription_minute_label">Минута</string>
     <string name="transcription_mode_after_each_call">После каждого звонка</string>
     <string name="transcription_mode_automatic">По расписанию</string>
+    <string name="transcription_sim_all">Все SIM</string>
+    <string name="transcription_sim_info">После завершения расшифровываются только звонки выбранной SIM. Звонок с другой SIM можно оставить или удалить. Если SIM не удалось определить, звонок расшифровывается и сохраняется.</string>
+    <string name="transcription_sim_label">Расшифровывать после каждого звонка только для</string>
+    <string name="transcription_sim_other_delete">Удалить запись</string>
+    <string name="transcription_sim_other_label">Для звонков с другой SIM</string>
     <string name="transcription_mode_label">Расшифровывать</string>
     <string name="transcription_mode_manual">Вручную</string>
     <string name="transcription_model_best">Лучшее качество</string>

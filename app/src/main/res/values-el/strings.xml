@@ -929,6 +929,11 @@
     <string name="transcription_minute_label">Λεπτό</string>
     <string name="transcription_mode_after_each_call">Μετά από κάθε κλήση</string>
     <string name="transcription_mode_automatic">Προγραμματισμένα</string>
+    <string name="transcription_sim_all">Όλες οι SIM</string>
+    <string name="transcription_sim_info">Μετά το τέλος μεταγράφονται μόνο οι κλήσεις της επιλεγμένης SIM. Μια κλήση στην άλλη SIM μπορεί να κρατηθεί ή να διαγραφεί. Αν η SIM δεν αναγνωρίζεται, η κλήση μεταγράφεται και κρατιέται.</string>
+    <string name="transcription_sim_label">Μεταγραφή μετά από κάθε κλήση μόνο για</string>
+    <string name="transcription_sim_other_delete">Διαγραφή της εγγραφής</string>
+    <string name="transcription_sim_other_label">Για κλήσεις στην άλλη SIM</string>
     <string name="transcription_mode_label">Απομαγνητοφώνηση</string>
     <string name="transcription_mode_manual">Χειροκίνητα</string>
     <string name="transcription_model_best">Βέλτιστη ποιότητα</string>
