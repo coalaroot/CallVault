@@ -48,6 +48,7 @@ class AppPreferences(context: Context) {
         internal val EXPORTABLE_KEYS: Set<String> = setOf(
             // Recording automation
             "carrier_recording_enabled", "auto_record_incoming", "auto_record_outgoing", "record_from_answer",
+            "record_auto_sim",
             "after_call_mode", "after_call_ask_style", "after_call_unanswered",
             // Who to record / ignore
             "ignore_anonymous_incoming", "ignore_cross_country_incoming", "ignore_cross_country_outgoing",
@@ -148,6 +149,8 @@ class AppPreferences(context: Context) {
         const val AUTO_RECORD_INCOMING = false
         const val AUTO_RECORD_OUTGOING = false
         const val RECORD_FROM_ANSWER = false
+        // Every SIM. Naming a slot by default would stop recording half of someone's calls.
+        const val RECORD_AUTO_SIM = "all"
 
         // --- Keep or delete after the call ---
         // KEEP is how CallVault has always behaved; asking is opted into. The other two only matter once
@@ -432,6 +435,8 @@ class AppPreferences(context: Context) {
         AUTO_RECORD_INCOMING("auto_record_incoming"),
         AUTO_RECORD_OUTGOING("auto_record_outgoing"),
         RECORD_FROM_ANSWER("record_from_answer"),
+        /** 1-based slot, or "all". See [getRecordAutoSimSlot]. */
+        RECORD_AUTO_SIM("record_auto_sim"),
         AFTER_CALL_MODE("after_call_mode"),
         AFTER_CALL_ASK_STYLE("after_call_ask_style"),
         AFTER_CALL_UNANSWERED("after_call_unanswered"),
@@ -1446,6 +1451,19 @@ class AppPreferences(context: Context) {
     
     /** Sets whether auto-recording for outgoing calls is enabled. */
     fun setAutoRecordOutgoingEnabled(enabled: Boolean) = setBoolean(Key.AUTO_RECORD_OUTGOING, enabled)
+
+    /**
+     * The 1-based SIM slot that automatic phone-call recording is limited to, or null for every SIM.
+     * Null is the default, so an existing install records as before.
+     */
+    fun getRecordAutoSimSlot(): Int? =
+        getString(Key.RECORD_AUTO_SIM, DefaultsValue.RECORD_AUTO_SIM)
+            ?.toIntOrNull()
+            ?.takeIf { it > 0 }
+
+    /** Limits automatic phone-call recording to [slot] (1-based), or to every SIM when [slot] is null. */
+    fun setRecordAutoSimSlot(slot: Int?) =
+        setString(Key.RECORD_AUTO_SIM, slot?.takeIf { it > 0 }?.toString() ?: DefaultsValue.RECORD_AUTO_SIM)
 
     /**
      * Whether an outgoing phone call is recorded from the moment it is answered rather than from the

@@ -36,6 +36,7 @@ class AfterCallSimPolicyTest {
         val prefs = AppPreferences(context)
         prefs.setTranscriptionAfterCallSimSlot(null)
         prefs.setTranscriptionOtherSim(OtherSimAction.KEEP)
+        prefs.setRecordAutoSimSlot(null)
     }
 
     @Test

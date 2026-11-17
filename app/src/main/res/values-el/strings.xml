@@ -516,6 +516,8 @@
     <string name="settings_audio_source">Πηγή ήχου</string>
     <string name="settings_auto_record_incoming">Αυτόματη εγγραφή εισερχόμενων τηλεφωνικών κλήσεων</string>
     <string name="settings_auto_record_outgoing">Αυτόματη εγγραφή εξερχόμενων τηλεφωνικών κλήσεων</string>
+    <string name="record_sim_info">Η αυτόματη εγγραφή ξεκινά μόνο για την επιλεγμένη SIM. Μια κλήση σε άλλη SIM δεν εγγράφεται. Αν η SIM δεν αναγνωρίζεται στην αρχή, η κλήση εγγράφεται και μετά αφαιρείται και δεν εμφανίζεται στη λίστα.</string>
+    <string name="record_sim_label">Αυτόματη εγγραφή μόνο για</string>
     <string name="settings_backup_desc">Αποθηκεύστε τις ρυθμίσεις σας σε ένα αρχείο, ή επαναφέρετέ τις από ένα.</string>
     <string name="settings_backup_title">Αντίγραφο ασφαλείας ρυθμίσεων</string>
     <string name="settings_bugreport_active_warning">Η καταγραφή εντοπισμού σφαλμάτων είναι ΕΝΕΡΓΗ. Θυμηθείτε να την απενεργοποιήσετε όταν τελειώσετε για να εξοικονομήσετε χώρο.</string>

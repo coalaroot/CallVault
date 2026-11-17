@@ -361,6 +361,8 @@
     <string name="settings_audio_source">Nguồn âm thanh</string>
     <string name="settings_auto_record_incoming">Tự động ghi âm cuộc gọi điện thoại đến</string>
     <string name="settings_auto_record_outgoing">Tự động ghi âm cuộc gọi điện thoại đi</string>
+    <string name="record_sim_info">Ghi âm tự động chỉ bắt đầu cho SIM đã chọn. Cuộc gọi trên SIM khác không được ghi. Nếu không nhận ra SIM lúc bắt đầu, cuộc gọi được ghi rồi bị xóa và không hiện trong danh sách.</string>
+    <string name="record_sim_label">Ghi âm tự động chỉ cho</string>
     <string name="settings_backup_desc">Lưu cài đặt của bạn vào một tệp hoặc khôi phục từ một tệp.</string>
     <string name="settings_backup_title">Sao lưu cài đặt</string>
     <string name="settings_bugreport_active_warning">Ghi nhật ký gỡ lỗi đang BẬT. Hãy nhớ tắt khi xong để tiết kiệm dung lượng.</string>

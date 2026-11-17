@@ -455,6 +455,8 @@
     <string name="settings_audio_source">منبع صدا</string>
     <string name="settings_auto_record_incoming">ضبط خودکار تماس‌های تلفنی ورودی</string>
     <string name="settings_auto_record_outgoing">ضبط خودکار تماس‌های تلفنی خروجی</string>
+    <string name="record_sim_info">ضبط خودکار فقط برای سیم‌کارت انتخاب‌شده شروع می‌شود. تماس سیم‌کارت دیگر ضبط نمی‌شود. اگر سیم‌کارت در آغاز شناسایی نشود، تماس ضبط و سپس حذف می‌شود و در فهرست دیده نمی‌شود.</string>
+    <string name="record_sim_label">ضبط خودکار فقط برای</string>
     <string name="settings_backup_desc">تنظیمات خود را در یک فایل ذخیره کنید یا آن‌ها را از یک فایل بازیابی کنید.</string>
     <string name="settings_backup_title">پشتیبان‌گیری از تنظیمات</string>
     <string name="settings_bugreport_active_warning">ضبط گزارش اشکال‌زدایی روشن است. یادتان باشد وقتی کارتان تمام شد برای صرفه‌جویی در فضا آن را خاموش کنید.</string>

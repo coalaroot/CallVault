@@ -364,6 +364,8 @@
     <string name="settings_audio_source">Źródło dźwięku</string>
     <string name="settings_auto_record_incoming">Automatycznie nagrywaj przychodzące połączenia telefoniczne</string>
     <string name="settings_auto_record_outgoing">Automatycznie nagrywaj wychodzące połączenia telefoniczne</string>
+    <string name="record_sim_info">Automatyczne nagrywanie zaczyna się tylko dla wybranej SIM. Połączenie z innej SIM nie jest nagrywane. Jeśli SIM nie da się rozpoznać na początku, połączenie jest nagrane i potem usunięte i nie pojawia się na liście.</string>
+    <string name="record_sim_label">Nagrywaj automatycznie tylko dla</string>
     <string name="settings_backup_desc">Zapisz swoje ustawienia do pliku lub przywróć je z pliku.</string>
     <string name="settings_backup_title">Kopia zapasowa ustawień</string>
     <string name="settings_bugreport_active_warning">Rejestrowanie diagnostyczne jest WŁĄCZONE. Pamiętaj, aby je wyłączyć po zakończeniu, aby zaoszczędzić miejsce.</string>

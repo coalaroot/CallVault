@@ -81,8 +81,7 @@ object AfterCallSimGate {
         if (!RecordingsRepository.isCarrierCall(displayName)) {
             return AfterCallSimPolicy.Decision(transcribe = true, deleteRecording = false)
         }
-        val startedAt = RecordingsRepository.parseName(displayName).startedAtMillis
-        val slot = startedAt?.let { slotWaiting(context, it) }
+        val slot = resolvedSlot(context, displayName)
         val decision = AfterCallSimPolicy.decide(
             targetSlot = target,
             otherDeletes = prefs.getTranscriptionOtherSim() == OtherSimAction.DELETE,
@@ -92,6 +91,16 @@ object AfterCallSimGate {
             AppLogger.i(TAG, "SIM for '$displayName' unknown; transcribing and keeping it")
         }
         return decision
+    }
+
+    /**
+     * The 1-based slot of the carrier call behind [displayName], or null. Waits briefly for the
+     * call-log row. Not a carrier recording, or a SIM that cannot be told, is null.
+     */
+    fun resolvedSlot(context: Context, displayName: String): Int? {
+        if (!RecordingsRepository.isCarrierCall(displayName)) return null
+        val startedAt = RecordingsRepository.parseName(displayName).startedAtMillis ?: return null
+        return slotWaiting(context, startedAt)
     }
 
     /** The 1-based slot, retrying while the call log is still being written. */

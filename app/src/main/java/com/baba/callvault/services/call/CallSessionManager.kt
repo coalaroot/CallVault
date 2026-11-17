@@ -24,6 +24,8 @@ import com.baba.callvault.data.health.recordMissedForMissingPrerequisite
 import com.baba.callvault.data.recordings.RecordingDirection
 import com.baba.callvault.data.recordings.RecordingMetadata
 import com.baba.callvault.services.recording.DaemonKeepAliveService
+import com.baba.callvault.services.recording.RecordSimGate
+import com.baba.callvault.services.recording.RecordSimPolicy
 import com.baba.callvault.services.recording.RecordingForegroundService
 import com.baba.callvault.services.recording.RecordingPolicy
 import com.baba.callvault.services.recording.VoipRecordingCoordinator
@@ -155,6 +157,9 @@ class CallSessionManager private constructor(context: Context) {
     private val appContext: Context = context.applicationContext
     private val preferences = AppPreferences(appContext)
 
+    /** 1-based slot from the phone-state broadcast, when the broadcast carried one. */
+    private var simHint: Int? = null
+
     private val temporaryCache = CallSessionTemporaryCache(appContext)
 
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -220,7 +225,8 @@ class CallSessionManager private constructor(context: Context) {
      * @param phoneNumber The phone number associated with the state change. Could be null, blank, or an OEM anonymous string.
      */
     @Synchronized
-    fun handlePhoneState(stateString: String, phoneNumber: String?) {
+    fun handlePhoneState(stateString: String, phoneNumber: String?, simHint: Int? = null) {
+        if (simHint != null) this.simHint = simHint
         val receivedCallState = when (stateString) {
             TelephonyManager.EXTRA_STATE_RINGING  -> TelephonyManager.CALL_STATE_RINGING
             TelephonyManager.EXTRA_STATE_OFFHOOK  -> TelephonyManager.CALL_STATE_OFFHOOK
@@ -248,6 +254,7 @@ class CallSessionManager private constructor(context: Context) {
                 sendServiceCommand(RecordingForegroundService.ACTION_STOP_RECORDING)
                 session.clear()
             }
+            this.simHint = null
             return
         }
 
@@ -359,6 +366,15 @@ class CallSessionManager private constructor(context: Context) {
             return
         }
         val sessionMetadata = session.currentMetadata ?: throw IllegalStateException("Metadata should have been determined by now. There is a logic error.")
+
+        // Automatic recording limited to one SIM. A known other SIM is not recorded and not offered.
+        // An unknown SIM still records; the file is removed at the end if the call log names the other SIM.
+        val simDecision = RecordSimGate.onCallStarting(appContext, simHint)
+        if (simDecision == RecordSimPolicy.Decision.SKIP) {
+            AppLogger.i(TAG, "Not recording this ${sessionMetadata.direction} call: it is not on the SIM selected for automatic recording.")
+            session.wasRecordingServiceStartIntentSend = true
+            return
+        }
 
         // IGNORE is genuinely "do nothing" — note that the OFFER branch is not: it posts a standby
         // notification with a Record button, on every call. Someone who turned phone-call recording

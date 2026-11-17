@@ -365,6 +365,8 @@
     <string name="settings_audio_source">Fonte de áudio</string>
     <string name="settings_auto_record_incoming">Gravar automaticamente chamadas telefônicas recebidas</string>
     <string name="settings_auto_record_outgoing">Gravar automaticamente chamadas telefônicas efetuadas</string>
+    <string name="record_sim_info">A gravação automática começa só para o SIM escolhido. Uma chamada em outro SIM não é gravada. Se o SIM não puder ser identificado no início, a chamada é gravada e depois removida, e não aparece na lista.</string>
+    <string name="record_sim_label">Gravar automaticamente apenas para</string>
     <string name="settings_backup_desc">Salve suas configurações em um arquivo ou restaure-as de um.</string>
     <string name="settings_backup_title">Fazer backup das configurações</string>
     <string name="settings_bugreport_active_warning">O registro de depuração está ATIVADO. Lembre-se de desativá-lo quando terminar, para economizar espaço.</string>

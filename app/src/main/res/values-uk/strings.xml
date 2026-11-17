@@ -372,6 +372,8 @@
     <string name="settings_audio_source">Джерело аудіо</string>
     <string name="settings_auto_record_incoming">Автозапис вхідних телефонних дзвінків</string>
     <string name="settings_auto_record_outgoing">Автозапис вихідних телефонних дзвінків</string>
+    <string name="record_sim_info">Автозапис починається лише для обраної SIM. Дзвінок з іншої SIM не записується. Якщо SIM не вдалося визначити на початку, дзвінок записується і потім видаляється та не з’являється у списку.</string>
+    <string name="record_sim_label">Автозапис лише для</string>
     <string name="settings_backup_desc">Збереження або відновлення налаштувань із файлу.</string>
     <string name="settings_backup_title">Резервна копія налаштувань</string>
     <string name="settings_bugreport_active_warning">Діагностика увімкнена. Після тестування вимкніть її, щоб не витрачати памʼять.</string>

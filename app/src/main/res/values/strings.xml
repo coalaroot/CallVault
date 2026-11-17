@@ -288,6 +288,8 @@
     <string name="settings_carrier_recording_description">Off: phone calls are ignored completely — no recording, no notification. App calls are unaffected.</string>
     <string name="settings_auto_record_incoming">Auto-record incoming phone calls</string>
     <string name="settings_auto_record_outgoing">Auto-record outgoing phone calls</string>
+    <string name="record_sim_info">Automatic recording starts only for the chosen SIM. A call on another SIM is not recorded. If the SIM cannot be told when the call starts, the call is recorded and then removed, and it does not appear in the list.</string>
+    <string name="record_sim_label">Record automatically only for</string>
     <string name="settings_record_from_answer">Start when they answer</string>
     <string name="settings_record_from_answer_description">Outgoing phone calls are recorded from the moment the other person picks up, not from the dial. App calls too, when the app shows a call timer on its notification (WhatsApp does).</string>
     <string name="settings_ignore_anonymous_incoming">Skip hidden-number calls</string>

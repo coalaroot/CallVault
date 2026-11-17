@@ -227,6 +227,8 @@
     <string name="settings_carrier_recording_description">বন্ধ: ফোন কল পুরোপুরি উপেক্ষা করা হয় — কোনো রেকর্ডিং বা নোটিফিকেশন নেই। অ্যাপ কলে কোনো প্রভাব নেই।</string>
     <string name="settings_auto_record_incoming">ইনকামিং ফোন কল স্বয়ংক্রিয়ভাবে রেকর্ড করুন</string>
     <string name="settings_auto_record_outgoing">আউটগোয়িং ফোন কল স্বয়ংক্রিয়ভাবে রেকর্ড করুন</string>
+    <string name="record_sim_info">স্বয়ংক্রিয় রেকর্ডিং শুধু বেছে নেওয়া সিমে শুরু হয়। অন্য সিমের কল রেকর্ড হয় না। শুরুতে সিম চেনা না গেলে কল রেকর্ড হয়ে পরে মুছে যায় এবং তালিকায় দেখা যায় না।</string>
+    <string name="record_sim_label">শুধু এটার জন্য স্বয়ংক্রিয় রেকর্ড</string>
     <string name="settings_record_from_answer">ধরলে তবেই শুরু করুন</string>
     <string name="settings_record_from_answer_description">আউটগোয়িং ফোন কল ডায়াল করার সময় থেকে নয়, অন্য ব্যক্তি ফোন ধরার মুহূর্ত থেকে রেকর্ড হয়। অ্যাপ কলেও, যদি অ্যাপটি নোটিফিকেশনে কলের টাইমার দেখায় (WhatsApp দেখায়)।</string>
     <string name="settings_ignore_anonymous_incoming">লুকানো নম্বরের কল বাদ দিন</string>

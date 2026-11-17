@@ -399,6 +399,8 @@
     <string name="settings_audio_source">مصدر الصوت</string>
     <string name="settings_auto_record_incoming">التسجيل التلقائي للمكالمات الهاتفية الواردة</string>
     <string name="settings_auto_record_outgoing">التسجيل التلقائي للمكالمات الهاتفية الصادرة</string>
+    <string name="record_sim_info">يبدأ التسجيل التلقائي فقط للشريحة المختارة. مكالمة الشريحة الأخرى لا تُسجَّل. إذا تعذر تحديد الشريحة عند البدء، تُسجَّل المكالمة ثم تُحذف ولا تظهر في القائمة.</string>
+    <string name="record_sim_label">سجّل تلقائيًا فقط لـ</string>
     <string name="settings_backup_desc">احفظ إعداداتك في ملف، أو استعِدها من ملف.</string>
     <string name="settings_backup_title">نسخ احتياطي للإعدادات</string>
     <string name="settings_bugreport_active_warning">تسجيل تصحيح الأخطاء قيد التشغيل. تذكر إيقاف تشغيله عند الانتهاء لتوفير المساحة.</string>

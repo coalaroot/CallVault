@@ -362,6 +362,8 @@
     <string name="settings_audio_source">Hangforrás</string>
     <string name="settings_auto_record_incoming">Bejövő telefonhívások automatikus rögzítése</string>
     <string name="settings_auto_record_outgoing">Kimenő telefonhívások automatikus rögzítése</string>
+    <string name="record_sim_info">Az automatikus felvétel csak a kiválasztott SIM-re indul. A másik SIM hívása nem kerül rögzítésre. Ha a SIM a kezdetkor nem azonosítható, a hívás rögzül, majd törlődik, és nem jelenik meg a listában.</string>
+    <string name="record_sim_label">Automatikus felvétel csak ennél</string>
     <string name="settings_backup_desc">Mentsd a beállításaidat egy fájlba, vagy állítsd vissza egy fájlból.</string>
     <string name="settings_backup_title">Beállítások mentése</string>
     <string name="settings_bugreport_active_warning">A hibakeresési naplózás BE van kapcsolva. Ne felejtse el kikapcsolni, ha végzett, hogy helyet takarítson meg.</string>

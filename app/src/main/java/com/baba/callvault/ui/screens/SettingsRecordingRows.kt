@@ -19,10 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.baba.callvault.R
 import com.baba.callvault.data.AppPreferences
+import com.baba.callvault.data.calls.SimLabels
 import com.baba.callvault.ui.common.FileNameFormatDialog
+import com.baba.callvault.ui.common.M3DropdownField
+import com.baba.callvault.ui.common.OptionItem
 import com.baba.callvault.ui.viewmodels.SettingsActions
 import com.baba.callvault.utils.fileNameTemplateExample
 import com.baba.callvault.utils.CustomFileNameTemplate
@@ -65,6 +69,53 @@ internal fun AutoRecordOutgoingRow(preferences: AppPreferences, updateTrigger: I
         checked = autoRecordOutgoing,
         onCheckedChange = { actions.setAutoRecordOutgoing(it) }
     )
+}
+
+/**
+ * Automatic phone-call recording for one SIM. Hidden unless two SIMs are active. All SIMs is the
+ * default, which is how CallVault has always recorded.
+ */
+@Composable
+internal fun RecordSimRow(preferences: AppPreferences, updateTrigger: Int) {
+    val context = LocalContext.current
+    val simWord = stringResource(R.string.sim_label_word)
+    val sims = remember(updateTrigger) { SimLabels.activeSims(context, simWord) }
+    if (sims.size >= 2) RecordSimChoice(preferences, updateTrigger, simWord, sims)
+}
+
+@Composable
+private fun RecordSimChoice(
+    preferences: AppPreferences,
+    updateTrigger: Int,
+    simWord: String,
+    sims: List<SimLabels.Sim>,
+) {
+    var slot by remember(updateTrigger) { mutableStateOf(preferences.getRecordAutoSimSlot()) }
+    val selected = slot
+    val allLabel = stringResource(R.string.transcription_sim_all)
+    val options = buildList {
+        add(OptionItem("all", allLabel))
+        sims.forEach { sim -> sim.slot?.let { add(OptionItem(it.toString(), sim.label)) } }
+        if (selected != null && sims.none { it.slot == selected }) {
+            add(OptionItem(selected.toString(), "$simWord $selected"))
+        }
+    }
+    val selectedKey = selected?.toString() ?: "all"
+    val label = stringResource(R.string.record_sim_label)
+    DropdownRow {
+        WithInfo(label, stringResource(R.string.record_sim_info)) {
+            M3DropdownField(
+                label = label,
+                selected = options.find { it.key == selectedKey } ?: options.first(),
+                options = options,
+                onOptionSelected = { picked ->
+                    val chosen = picked.key.toIntOrNull()?.takeIf { it > 0 }
+                    preferences.setRecordAutoSimSlot(chosen)
+                    slot = chosen
+                },
+            )
+        }
+    }
 }
 
 /**

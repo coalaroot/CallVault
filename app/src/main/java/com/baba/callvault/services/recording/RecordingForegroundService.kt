@@ -933,7 +933,7 @@ class RecordingForegroundService : Service() {
                     uriToRename, mimeType, activeSession.lastCapturedByteCount, originalMetadata?.direction, mix
                 )
             }
-            if (AfterCallSimGate.mayBlockForDelete(applicationContext)) {
+            if (AfterCallSimGate.mayBlockForDelete(applicationContext) || RecordSimGate.needsEndCheck(applicationContext)) {
                 CoroutineScope(Dispatchers.IO).launch { route() }
             } else {
                 route()
@@ -1164,8 +1164,11 @@ class RecordingForegroundService : Service() {
         // question and the cloud copy: a recording removed here must not be uploaded or asked about.
         // Off unless the user picked one SIM and "delete the other", so this returns immediately
         // for everyone else.
-        if (AfterCallSimGate.shouldDelete(applicationContext, name)) {
-            SafHelper.deleteDocument(doc, "the recording '$name' on the other SIM")
+        val otherSim = AfterCallSimGate.shouldDelete(applicationContext, name)
+        val wrongSim = RecordSimGate.shouldDiscard(applicationContext, name)
+        if (otherSim || wrongSim) {
+            val why = if (otherSim) "the other SIM" else "automatic recording is limited to another SIM"
+            SafHelper.deleteDocument(doc, "the recording '$name' ($why)")
             return
         }
 

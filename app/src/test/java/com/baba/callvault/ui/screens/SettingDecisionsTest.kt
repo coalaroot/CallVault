@@ -47,6 +47,7 @@ class SettingDecisionsTest {
         "auto_record_incoming" to Decision(Wizard(WizardStep.AUTO_RECORD)),
         "auto_record_outgoing" to Decision(Wizard(WizardStep.AUTO_RECORD)),
         "record_from_answer" to Decision(SettingsOnly("a refinement of outgoing recording; the default is right for most")),
+        "record_auto_sim" to Decision(SettingsOnly("only matters on dual-SIM phones; all SIMs by default, so existing installs record every call")),
         // Keep or delete after the call (2026-11-06): a way of working a new user would never discover alone.
         "after_call_mode" to Decision(Wizard(WizardStep.AUTO_RECORD)),
         "after_call_ask_style" to Decision(Wizard(WizardStep.AUTO_RECORD)), // shown once Ask is on (maintainer, 2026-11-07)

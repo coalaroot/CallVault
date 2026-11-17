@@ -361,6 +361,8 @@
     <string name="settings_audio_source">音源</string>
     <string name="settings_auto_record_incoming">自动录制呼入电话</string>
     <string name="settings_auto_record_outgoing">自动录制呼出电话</string>
+    <string name="record_sim_info">自动录音只为所选 SIM 开始。另一张 SIM 上的通话不会录音。如果开始时无法识别 SIM，通话会先录下再删除，并且不会出现在列表中。</string>
+    <string name="record_sim_label">仅自动录音</string>
     <string name="settings_backup_desc">将你的设置保存到文件，或从文件中恢复。</string>
     <string name="settings_backup_title">备份设置</string>
     <string name="settings_bugreport_active_warning">调试日志已开启。完成后请记得关闭以节省空间。</string>

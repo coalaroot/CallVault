@@ -31,6 +31,7 @@ internal object SettingsSearchIndex {
         "VoipAppPicker" to Entry(listOf(R.string.settings_voip_apps_all, R.string.settings_voip_apps_hint, R.string.settings_voip_apps_label, R.string.settings_voip_apps_loading), listOf("voip", "whatsapp", "telegram", "signal", "apps")),
         "AutoRecordIncomingRow" to Entry(listOf(R.string.settings_auto_record_incoming), listOf()),
         "AutoRecordOutgoingRow" to Entry(listOf(R.string.settings_auto_record_outgoing), listOf()),
+        "RecordSimRow" to Entry(listOf(R.string.record_sim_info, R.string.record_sim_label, R.string.transcription_sim_all), listOf("sim", "dual sim", "automatic")),
         "RecordFromAnswerRow" to Entry(listOf(R.string.settings_record_from_answer, R.string.settings_record_from_answer_description), listOf()),
         "VoipAutoStartRow" to Entry(listOf(R.string.settings_voip_auto_start_description, R.string.settings_voip_auto_start_record_label), listOf("voip", "whatsapp", "telegram", "automatic")),
         "VibrationRow" to Entry(listOf(R.string.settings_vibration_enabled), listOf()),

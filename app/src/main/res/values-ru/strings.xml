@@ -364,6 +364,8 @@
     <string name="settings_audio_source">Источник аудио</string>
     <string name="settings_auto_record_incoming">Автозапись входящих телефонных звонков</string>
     <string name="settings_auto_record_outgoing">Автозапись исходящих телефонных звонков</string>
+    <string name="record_sim_info">Автозапись начинается только для выбранной SIM. Звонок с другой SIM не записывается. Если SIM не удалось определить в начале, звонок записывается и затем удаляется и не появляется в списке.</string>
+    <string name="record_sim_label">Автозапись только для</string>
     <string name="settings_backup_desc">Сохраните свои настройки в файл или восстановите их из файла.</string>
     <string name="settings_backup_title">Резервная копия настроек</string>
     <string name="settings_bugreport_active_warning">Отладочное логирование ВКЛЮЧЕНО. Не забудьте выключить его по завершении, чтобы сэкономить место.</string>

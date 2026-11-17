@@ -362,6 +362,8 @@
     <string name="settings_audio_source">Source audio</string>
     <string name="settings_auto_record_incoming">Enregistrer automatiquement les appels téléphoniques entrants</string>
     <string name="settings_auto_record_outgoing">Enregistrer automatiquement les appels téléphoniques sortants</string>
+    <string name="record_sim_info">L\'enregistrement automatique ne démarre que pour la SIM choisie. Un appel sur une autre SIM n\'est pas enregistré. Si la SIM ne peut pas être reconnue au début, l\'appel est enregistré puis retiré, et il n\'apparaît pas dans la liste.</string>
+    <string name="record_sim_label">Enregistrer automatiquement seulement pour</string>
     <string name="settings_backup_desc">Enregistrez vos paramètres dans un fichier, ou restaurez-les depuis un fichier.</string>
     <string name="settings_backup_title">Sauvegarder les paramètres</string>
     <string name="settings_bugreport_active_warning">La journalisation de débogage est ACTIVÉE. Pensez à la désactiver une fois terminé pour économiser de l\'espace.</string>
