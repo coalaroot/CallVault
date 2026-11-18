@@ -118,6 +118,9 @@ class RecordingForegroundService : Service() {
          */
         const val ACTION_MANUAL_START = "com.baba.callvault.MANUAL_START_RECORDING"
 
+        /** Automatic start whose SIM was not known: record, but do not say "Recording started". */
+        const val EXTRA_QUIET_START = "com.baba.callvault.EXTRA_QUIET_START"
+
         /** Intent action sent to this service when the user dismisses the notification (Android 14+). */
         const val ACTION_NOTIFICATION_DISMISSED = "com.baba.callvault.SERVICE_NOTIFICATION_DISMISSED"
 
@@ -166,7 +169,7 @@ class RecordingForegroundService : Service() {
                 val oldState = field
                 field = value
                 updateNotification()
-                notificationHelper.handleStateChangeToasts(oldState, value)
+                notificationHelper.handleStateChangeToasts(oldState, value, RecordSimGate.isQuiet())
             }
         }
 
@@ -282,6 +285,13 @@ class RecordingForegroundService : Service() {
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
+        if (action == ACTION_MANUAL_START) RecordSimGate.beginManual()
+        else if (action == ACTION_START_RECORDING) {
+            RecordSimGate.beginAutomatic(intent.getBooleanExtra(EXTRA_QUIET_START, false))
+        } else if (action == ACTION_STANDBY) {
+            // A new call's offer must not inherit the previous call's quiet/manual flags.
+            RecordSimGate.beginAutomatic(false)
+        }
 
         var currentMeta = currentState.metadata
 
@@ -488,7 +498,7 @@ class RecordingForegroundService : Service() {
                 ?.takeIf { opening == RecordingNoticePolicy.Opening.PREPARING }
                 ?.let { RecordingServiceState.Starting(it) }
                 ?: currentState
-            notificationHelper.getNotification(openingState)
+            notificationHelper.getNotification(openingState, RecordSimGate.isQuiet())
         }
         startForegroundWithType(notification)
         return voipCall
@@ -1273,7 +1283,7 @@ class RecordingForegroundService : Service() {
         // Stopping: the notification is on its way out, and posting it again would flash a state the
         // user has no use for — or re-promote a service that has already stopped itself.
         if (isShuttingDown) return
-        val notification = notificationHelper.getNotification(currentState)
+        val notification = notificationHelper.getNotification(currentState, RecordSimGate.isQuiet())
         startForegroundWithType(notification)
     }
 

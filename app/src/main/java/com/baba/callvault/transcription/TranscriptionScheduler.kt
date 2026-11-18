@@ -18,6 +18,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.baba.callvault.data.AppPreferences
+import com.baba.callvault.services.recording.RecordSimGate
 import com.baba.callvault.transcription.cloud.TranscriptionService
 import com.baba.callvault.data.TranscriptionMode
 import com.baba.callvault.utils.AppLogger
@@ -197,7 +198,8 @@ object TranscriptionScheduler {
         }
 
         // A single SIM (issue #81). Unknown SIM, or "all SIMs", falls through and queues as before.
-        if (AfterCallSimGate.skipTranscription(context, displayName)) return
+        // A recording the user started on the other SIM is still transcribed.
+        if (!RecordSimGate.takeManual() && AfterCallSimGate.skipTranscription(context, displayName)) return
 
         val requiresCharging = prefs.getTranscriptionRequiresCharging()
         AppLogger.i(

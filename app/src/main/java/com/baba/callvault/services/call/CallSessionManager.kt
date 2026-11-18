@@ -367,14 +367,10 @@ class CallSessionManager private constructor(context: Context) {
         }
         val sessionMetadata = session.currentMetadata ?: throw IllegalStateException("Metadata should have been determined by now. There is a logic error.")
 
-        // Automatic recording limited to one SIM. A known other SIM is not recorded and not offered.
-        // An unknown SIM still records; the file is removed at the end if the call log names the other SIM.
+        // Automatic recording limited to one SIM. A known other SIM is not started; the Record
+        // button stays, and a tap is kept. An unknown SIM still records, without the
+        // "Recording started" announcement, and is removed if the call log names the other SIM.
         val simDecision = RecordSimGate.onCallStarting(appContext, simHint)
-        if (simDecision == RecordSimPolicy.Decision.SKIP) {
-            AppLogger.i(TAG, "Not recording this ${sessionMetadata.direction} call: it is not on the SIM selected for automatic recording.")
-            session.wasRecordingServiceStartIntentSend = true
-            return
-        }
 
         // IGNORE is genuinely "do nothing" — note that the OFFER branch is not: it posts a standby
         // notification with a Record button, on every call. Someone who turned phone-call recording
@@ -387,16 +383,22 @@ class CallSessionManager private constructor(context: Context) {
                 AppLogger.i(TAG, "Phone-call recording is off — ignoring this ${sessionMetadata.direction} call entirely.")
 
             RecordingPolicy.CarrierAction.RECORD -> {
-                reportGapIfPrerequisiteMissing(sessionMetadata)
-                if (sessionMetadata.direction == RecordingDirection.OUTGOING && preferences.isRecordFromAnswerEnabled()) {
-                    // Standby warms the daemon at the dial, exactly as it does for a call that is
-                    // offered rather than recorded; the start follows when the far end picks up.
-                    AppLogger.i(TAG, "Sending standby INTENT for ${sessionMetadata.direction} call; recording starts when it is answered.")
+                if (simDecision == RecordSimPolicy.Decision.OFFER) {
+                    AppLogger.i(TAG, "Other SIM: not starting ${sessionMetadata.direction}; offering Record.")
                     sendServiceCommand(RecordingForegroundService.ACTION_STANDBY, sessionMetadata)
-                    answerJob = managerScope.launch { startWhenAnswered(sessionMetadata) }
                 } else {
-                    AppLogger.i(TAG, "Sending start INTENT for ${sessionMetadata.direction} call to RecordingForegroundService.")
-                    sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, sessionMetadata)
+                    val quiet = simDecision == RecordSimPolicy.Decision.RECORD_QUIET
+                    reportGapIfPrerequisiteMissing(sessionMetadata)
+                    if (sessionMetadata.direction == RecordingDirection.OUTGOING && preferences.isRecordFromAnswerEnabled()) {
+                        // Standby warms the daemon at the dial, exactly as it does for a call that is
+                        // offered rather than recorded; the start follows when the far end picks up.
+                        AppLogger.i(TAG, "Sending standby INTENT for ${sessionMetadata.direction} call; recording starts when it is answered.")
+                        sendServiceCommand(RecordingForegroundService.ACTION_STANDBY, sessionMetadata)
+                        answerJob = managerScope.launch { startWhenAnswered(sessionMetadata, quiet) }
+                    } else {
+                        AppLogger.i(TAG, "Sending start INTENT for ${sessionMetadata.direction} call to RecordingForegroundService (quiet=$quiet).")
+                        sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, sessionMetadata, quiet)
+                    }
                 }
             }
 
@@ -466,7 +468,7 @@ class CallSessionManager private constructor(context: Context) {
      * ACTIVE. Every outcome but "still ringing" starts the recording — a host that cannot say, or a
      * wait that runs too long, must not cost the call. See [AnswerWait] for the rule.
      */
-    private suspend fun startWhenAnswered(metadata: RecordingMetadata) {
+    private suspend fun startWhenAnswered(metadata: RecordingMetadata, quiet: Boolean) {
         val startedAt = System.currentTimeMillis()
         var polls = 0
         while (true) {
@@ -485,19 +487,20 @@ class CallSessionManager private constructor(context: Context) {
                     else -> "call answered"
                 }
                 AppLogger.i(TAG, "Sending start INTENT for ${metadata.direction} call after $polls polls: $why (state=$state, ${elapsed}ms).")
-                sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, metadata)
+                sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, metadata, quiet)
                 return
             }
             delay(AnswerWait.POLL_MS)
         }
     }
 
-    private fun sendServiceCommand(action: String, metadata: RecordingMetadata? = null) {
+    private fun sendServiceCommand(action: String, metadata: RecordingMetadata? = null, quiet: Boolean = false) {
         val intent = Intent(appContext, RecordingForegroundService::class.java).apply {
             this.action = action
             if (metadata != null) {
                 putExtra(RecordingMetadata.EXTRA_METADATA, metadata)
             }
+            if (quiet) putExtra(RecordingForegroundService.EXTRA_QUIET_START, true)
         }
         if (action == RecordingForegroundService.ACTION_STOP_RECORDING) {
             // When Stopping, we use StartService as we assume the service is already running from startForegroundService. We only send it a new Intent that trigger cleanup.

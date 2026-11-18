@@ -33,6 +33,36 @@ internal object RecordSimGate {
 
     private const val TAG = "CV:RecordSim"
 
+    /** The user pressed Record. That file is never removed for being on the other SIM. */
+    @Volatile
+    private var manual = false
+
+    /** An automatic start whose SIM was not known. No "Recording started" toast or vibration. */
+    @Volatile
+    private var quiet = false
+
+    fun beginAutomatic(quietStart: Boolean) {
+        manual = false
+        quiet = quietStart
+    }
+
+    fun beginManual() {
+        manual = true
+        quiet = false
+    }
+
+    fun isQuiet(): Boolean = quiet
+
+    /**
+     * A recording the user started, once. Cleared so the next automatic recording is not treated
+     * as manual. Transcription uses this to follow the after-each-call setting and not the SIM filter.
+     */
+    fun takeManual(): Boolean {
+        val was = manual
+        manual = false
+        return was
+    }
+
     /** Long enough for a call log that is written a few seconds after the call, not after the next one. */
     private const val ATTEMPTS = 16
     private const val RETRY_MS = 500L
@@ -62,6 +92,10 @@ internal object RecordSimGate {
      * Unknown stays. No-op when automatic recording is not limited to one SIM.
      */
     fun shouldDiscard(context: Context, displayName: String): Boolean {
+        if (manual) {
+            AppLogger.i(TAG, "end: '$displayName' was started manually; keeping it")
+            return false
+        }
         val target = AppPreferences(context).getRecordAutoSimSlot() ?: return false
         if (!RecordingsRepository.isCarrierCall(displayName)) {
             AppLogger.i(TAG, "end: '$displayName' is not a phone-call recording; not applying the SIM rule")
@@ -88,7 +122,7 @@ internal object RecordSimGate {
             )
             val slot = freshSim?.slot
             if (slot != null) {
-                val discard = slot != target
+                val discard = RecordSimPolicy.discards(manual = false, resolvedSlot = slot, targetSlot = target)
                 AppLogger.i(
                     TAG,
                     "end decision ${if (discard) "REMOVE" else "KEEP"}: " +

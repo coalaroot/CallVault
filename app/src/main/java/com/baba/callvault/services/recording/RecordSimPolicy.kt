@@ -12,27 +12,40 @@ package com.baba.callvault.services.recording
  * Whether an automatic recording should start, given the SIM the user chose and the SIM this call
  * is on right now.
  *
- * [targetSlot] null is every SIM: today's behaviour. A known other slot is not recorded at all.
- * An unknown slot is still recorded, and removed afterwards if the call log names the other SIM,
- * because a business call must not be dropped just because the slot could not be read in time.
+ * [targetSlot] null is every SIM: today's behaviour. A known other slot is not started on its own;
+ * the user can still press Record. An unknown slot is recorded without the "Recording started"
+ * announcement, and removed afterwards if the call log names the other SIM — a manual recording
+ * is never removed that way.
  */
 internal object RecordSimPolicy {
 
     enum class Decision {
-        /** Record (or offer) exactly as the other rules say. */
+        /** Automatic recording, announced as usual. */
         RECORD,
 
-        /** Do not record and do not offer a Record button. */
-        SKIP,
+        /** Do not start. Offer the Record button. */
+        OFFER,
 
-        /** Record now; drop the file at the end if the call log says it was the other SIM. */
-        RECORD_UNCONFIRMED,
+        /** Start, but do not announce it. May be removed after the call. */
+        RECORD_QUIET,
     }
 
     fun decide(targetSlot: Int?, activeSlot: Int?): Decision = when {
         targetSlot == null -> Decision.RECORD
-        activeSlot == null -> Decision.RECORD_UNCONFIRMED
+        activeSlot == null -> Decision.RECORD_QUIET
         activeSlot == targetSlot -> Decision.RECORD
-        else -> Decision.SKIP
+        else -> Decision.OFFER
+    }
+
+    /** The "Recording started" toast and its vibration. Only a confirmed automatic start. */
+    fun announcesStart(decision: Decision): Boolean = decision == Decision.RECORD
+
+    /**
+     * Whether a finished recording on [resolvedSlot] is removed because it is not [targetSlot].
+     * A recording the user started is kept. An unknown slot is kept.
+     */
+    fun discards(manual: Boolean, resolvedSlot: Int?, targetSlot: Int?): Boolean {
+        if (manual || targetSlot == null || resolvedSlot == null) return false
+        return resolvedSlot != targetSlot
     }
 }

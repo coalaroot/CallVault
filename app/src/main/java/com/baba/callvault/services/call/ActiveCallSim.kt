@@ -35,8 +35,15 @@ internal object ActiveCallSim {
     @SuppressLint("MissingPermission") // checked just below
     fun slot(context: Context, hint: Int? = null): Int? {
         val queried = query(context)
-        val chosen = queried ?: hint?.takeIf { it > 0 }
-        AppLogger.i(TAG, "live SIM query slot=${queried ?: "none"}, broadcast hint=${hint ?: "none"} → ${chosen ?: "unknown"}")
+        val hinted = hint?.takeIf { it > 0 }
+        // A per-subscription call-state that always names the default SIM hides the broadcast.
+        // The broadcast is about this state change, so a hint that disagrees wins.
+        val chosen = when {
+            hinted != null && queried != null && hinted != queried -> hinted
+            queried != null -> queried
+            else -> hinted
+        }
+        AppLogger.i(TAG, "live SIM query slot=${queried ?: "none"}, broadcast hint=${hinted ?: "none"} → ${chosen ?: "unknown"}")
         return chosen
     }
 
@@ -46,6 +53,7 @@ internal object ActiveCallSim {
         if (phoneId >= 0) return phoneId + 1
         val subId = listOf(
             intent.getIntExtra(SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX, -1),
+            intent.getIntExtra(TelephonyManager.EXTRA_SUBSCRIPTION_ID, -1),
             intent.getIntExtra("subscription", -1),
         ).firstOrNull { it >= 0 } ?: return null
         if (!PermissionChecks.hasPhoneStatePermission(context)) return null
