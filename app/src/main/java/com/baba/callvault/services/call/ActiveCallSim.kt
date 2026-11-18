@@ -14,6 +14,7 @@ import android.content.Intent
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import com.baba.callvault.system.permissions.PermissionChecks
+import com.baba.callvault.utils.AppLogger
 
 /**
  * Which SIM a call is on while it is still in progress.
@@ -29,10 +30,14 @@ import com.baba.callvault.system.permissions.PermissionChecks
  */
 internal object ActiveCallSim {
 
+    private const val TAG = "CV:RecordSim"
+
     @SuppressLint("MissingPermission") // checked just below
     fun slot(context: Context, hint: Int? = null): Int? {
-        query(context)?.let { return it }
-        return hint?.takeIf { it > 0 }
+        val queried = query(context)
+        val chosen = queried ?: hint?.takeIf { it > 0 }
+        AppLogger.i(TAG, "live SIM query slot=${queried ?: "none"}, broadcast hint=${hint ?: "none"} → ${chosen ?: "unknown"}")
+        return chosen
     }
 
     /** A 1-based slot from extras some PHONE_STATE broadcasts carry, or null. */
@@ -57,12 +62,20 @@ internal object ActiveCallSim {
         val infos = runCatching {
             context.getSystemService(SubscriptionManager::class.java)?.activeSubscriptionInfoList
         }.getOrNull().orEmpty()
-        if (infos.size < 2) return null
+        if (infos.size < 2) {
+            AppLogger.i(TAG, "live SIM query: ${infos.size} active subscription(s); cannot tell SIMs apart")
+            return null
+        }
         val tm = context.getSystemService(TelephonyManager::class.java) ?: return null
         val active = infos.mapNotNull { info ->
             val state = runCatching { tm.createForSubscriptionId(info.subscriptionId).callState }.getOrNull()
-                ?: return@mapNotNull null
-            if (state == TelephonyManager.CALL_STATE_IDLE) null else info to state
+            val slot = info.simSlotIndex.takeIf { it >= 0 }?.plus(1)
+            AppLogger.i(
+                TAG,
+                "subscription id=${info.subscriptionId} slot=${slot ?: "?"} " +
+                    "name='${info.displayName}' state=${stateName(state)}",
+            )
+            if (state == null || state == TelephonyManager.CALL_STATE_IDLE) null else info to state
         }
         val offhook = active.filter { it.second == TelephonyManager.CALL_STATE_OFFHOOK }
         val chosen = when {
@@ -70,6 +83,18 @@ internal object ActiveCallSim {
             offhook.isEmpty() && active.size == 1 -> active[0].first
             else -> null
         }
-        return chosen?.simSlotIndex?.takeIf { it >= 0 }?.plus(1)
+        val slot = chosen?.simSlotIndex?.takeIf { it >= 0 }?.plus(1)
+        if (slot == null) {
+            AppLogger.i(TAG, "live SIM query: ${offhook.size} off-hook, ${active.size} not idle; no single SIM")
+        }
+        return slot
+    }
+
+    private fun stateName(state: Int?): String = when (state) {
+        null -> "unreadable"
+        TelephonyManager.CALL_STATE_IDLE -> "idle"
+        TelephonyManager.CALL_STATE_RINGING -> "ringing"
+        TelephonyManager.CALL_STATE_OFFHOOK -> "off-hook"
+        else -> "state$state"
     }
 }
