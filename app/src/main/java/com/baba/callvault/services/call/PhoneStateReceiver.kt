@@ -49,9 +49,15 @@ class PhoneStateReceiver : BroadcastReceiver() {
      *                [TelephonyManager.ACTION_PHONE_STATE_CHANGED].
      */
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != TelephonyManager.ACTION_PHONE_STATE_CHANGED) return
+        val action = intent.action
+        if (action != TelephonyManager.ACTION_PHONE_STATE_CHANGED &&
+            action != ActiveCallSim.ACTION_SUBSCRIPTION_PHONE_STATE
+        ) return
+        // The plain PHONE_STATE broadcast is device-wide and carries no SIM. The per-SIM one
+        // (SUBSCRIPTION_PHONE_STATE) carries slot and subscription. Both are logged in full.
+        ActiveCallSim.logExtras(action, intent)
         // EXTRA_STATE is one of "IDLE", "RINGING", or "OFFHOOK".
-        val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: throw IllegalArgumentException("Missing EXTRA_STATE in phone state change intent. How is this possible??")
+        val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
 
         // EXTRA_INCOMING_NUMBER is set for both incoming and outgoing calls (I know the naming is confusing), but there is a nuance.
         // See this class KDoc comment "Double Broadcast" for more information on this. The first broadcast is always null.

@@ -13,7 +13,6 @@ import com.baba.callvault.R
 import com.baba.callvault.data.AppPreferences
 import com.baba.callvault.data.calls.SimChoice
 import com.baba.callvault.data.calls.SimLabels
-import com.baba.callvault.services.call.ActiveCallSim
 import com.baba.callvault.utils.AppLogger
 
 /** Reads the auto-record SIM choice and the SIM of the call that just went off-hook. */
@@ -21,9 +20,9 @@ internal object RecordSimGate {
 
     private const val TAG = "CV:RecordSim"
 
-    fun onCallStarting(context: Context, hintSlot: Int?): RecordSimPolicy.Decision {
+    fun onCallStarting(context: Context, activeSlot: Int?): RecordSimPolicy.Decision {
         val choice = AppPreferences(context).getRecordAutoSim()
-        val active = if (choice is SimChoice.Only) ActiveCallSim.slot(context, hintSlot) else null
+        val active = if (choice is SimChoice.Only) activeSlot else null
         val decision = RecordSimPolicy.decide(choice, active)
         if (choice != SimChoice.All) {
             val sims = runCatching {
@@ -32,7 +31,7 @@ internal object RecordSimGate {
             }.getOrDefault("?")
             AppLogger.i(
                 TAG,
-                "off-hook: choice=${choice.key} ($sims), seen slot=${active ?: "unknown"}, hint=${hintSlot ?: "none"} → $decision",
+                "off-hook: choice=${choice.key} ($sims), seen slot=${active ?: "unknown"} → $decision",
             )
         }
         return decision

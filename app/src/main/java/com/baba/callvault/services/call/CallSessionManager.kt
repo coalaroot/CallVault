@@ -18,6 +18,7 @@ import android.telephony.PhoneNumberUtils
 import android.telephony.TelephonyManager
 import com.baba.callvault.system.storage.CutOffRescueWorker
 import com.baba.callvault.data.AppPreferences
+import com.baba.callvault.data.calls.SimChoice
 import com.baba.callvault.data.health.SetupHealthStore
 import com.baba.callvault.data.health.SetupPrerequisites
 import com.baba.callvault.data.health.recordMissedForMissingPrerequisite
@@ -55,6 +56,9 @@ class CallSessionManager private constructor(context: Context) {
     // Constants accessible globally
     companion object {
         private const val TAG = "CV:CallSessionManager"
+
+        /** How long to wait for the per-SIM broadcast after the device-wide one. */
+        private const val SIM_BROADCAST_WAIT_MS = 600L
 
         // Singleton instance management
         @Volatile
@@ -160,6 +164,12 @@ class CallSessionManager private constructor(context: Context) {
     /** 1-based slot from the phone-state broadcast, when the broadcast carried one. */
     private var simHint: Int? = null
 
+    /** 1-based slot chosen for this call, once the sources above have been read. */
+    private var resolvedSlot: Int? = null
+
+    /** SIM picked on the dialler, from the last outgoing-call broadcast, and when it arrived. */
+    private var outgoingSim: Pair<Int, Long>? = null
+
     /** This call was offered a Record button on purpose, so its end is not a missed recording. */
     private var excusedUnrecorded = false
 
@@ -198,13 +208,18 @@ class CallSessionManager private constructor(context: Context) {
      * @param number [Intent.EXTRA_PHONE_NUMBER] of the [Intent.ACTION_NEW_OUTGOING_CALL] broadcast.
      */
     @Synchronized
-    fun handleNewOutgoingCall(number: String?) {
+    fun handleNewOutgoingCall(number: String?, slot: Int? = null) {
         dialled = PhoneNumberManager.sanitizeOemNumber(number)?.let { it to SystemClock.elapsedRealtime() }
+        // Replace, including with null. A redial that does not name a SIM must not keep the previous one.
+        outgoingSim = slot?.let { it to SystemClock.elapsedRealtime() }
     }
 
     /** The dialled number, if it came recently enough to belong to the call going off-hook now. */
     private fun freshDialledNumber(): String? =
         dialled?.takeIf { SystemClock.elapsedRealtime() - it.second <= RedirectedCall.MAX_DIAL_LEAD_MS }?.first
+
+    private fun freshOutgoingSlot(): Int? =
+        outgoingSim?.takeIf { SystemClock.elapsedRealtime() - it.second <= RedirectedCall.MAX_DIAL_LEAD_MS }?.first
 
     /**
      * Handles incoming telephony state changes to manage the recording session lifecycle.
@@ -264,6 +279,8 @@ class CallSessionManager private constructor(context: Context) {
                 excusedUnrecorded = false
             }
             this.simHint = null
+            this.resolvedSlot = null
+            this.outgoingSim = null
             return
         }
 
@@ -350,11 +367,38 @@ class CallSessionManager private constructor(context: Context) {
             val currentMetadata = session.currentMetadata ?: throw IllegalStateException("Current metadata should not be null at this point. There is a logic error in the flow.")
             val enrichedMetadata = RecordingMetadata.enrichMetadata(appContext, currentMetadata)
 
+            resolvedSlot = resolveSimSlot()
+
             // Move to the Main thread (sync) to be thread-safe
             withContext(Dispatchers.Main) {
                 session.currentMetadata = enrichedMetadata
                 evaluateAndStartService()
             }
+        }
+    }
+
+    /**
+     * The SIM of this call, or null.
+     *
+     * The in-process sources are read first. When auto-record is limited to one SIM and they cannot
+     * tell, wait briefly: the per-SIM broadcast often follows the device-wide one. Then read the
+     * telephony registry, which keeps one call state per phone.
+     */
+    private suspend fun resolveSimSlot(): Int? {
+        val outgoing = freshOutgoingSlot()
+        val first = withContext(Dispatchers.IO) {
+            ActiveCallSim.identify(appContext, simHint, outgoing, registryDump = null)
+        }
+        if (first != null || preferences.getRecordAutoSim() !is SimChoice.Only) return first
+        delay(SIM_BROADCAST_WAIT_MS)
+        val dump = withContext(Dispatchers.IO) {
+            val text = runCatching { RecorderConnection.service?.diagnosticDump("call_sim", null) }.getOrNull()
+            val brief = text?.lineSequence()?.filter { it.isNotBlank() }?.take(12)?.joinToString(" | ")
+            AppLogger.i("CV:RecordSim", "registry: ${brief?.ifBlank { null } ?: "none"}")
+            text
+        }
+        return withContext(Dispatchers.IO) {
+            ActiveCallSim.identify(appContext, simHint, freshOutgoingSlot(), dump)
         }
     }
 
@@ -378,7 +422,7 @@ class CallSessionManager private constructor(context: Context) {
 
         // Auto-record is all SIMs, one SIM, or none. A known other SIM (or none) is not started;
         // the notification offers Record, and a tap is kept. An unknown SIM is recorded and announced.
-        val simDecision = RecordSimGate.onCallStarting(appContext, simHint)
+        val simDecision = RecordSimGate.onCallStarting(appContext, resolvedSlot)
 
         // IGNORE is genuinely "do nothing" — note that the OFFER branch is not: it posts a standby
         // notification with a Record button, on every call. Someone who turned phone-call recording
@@ -393,13 +437,13 @@ class CallSessionManager private constructor(context: Context) {
             RecordingPolicy.CarrierAction.RECORD -> {
                 if (simDecision == RecordSimPolicy.Decision.OFFER) {
                     excusedUnrecorded = true
-                    val label = RecordSimGate.labelOf(appContext, ActiveCallSim.slot(appContext, simHint))
+                    val label = RecordSimGate.labelOf(appContext, resolvedSlot)
                     AppLogger.i(TAG, "Not auto-recording this ${sessionMetadata.direction} call; offering Record.")
                     sendServiceCommand(RecordingForegroundService.ACTION_STANDBY, sessionMetadata, label)
                 } else {
                     excusedUnrecorded = false
                     reportGapIfPrerequisiteMissing(sessionMetadata)
-                    val label = RecordSimGate.labelOf(appContext, ActiveCallSim.slot(appContext, simHint))
+                    val label = RecordSimGate.labelOf(appContext, resolvedSlot)
                     if (sessionMetadata.direction == RecordingDirection.OUTGOING && preferences.isRecordFromAnswerEnabled()) {
                         // Standby warms the daemon at the dial, exactly as it does for a call that is
                         // offered rather than recorded; the start follows when the far end picks up.

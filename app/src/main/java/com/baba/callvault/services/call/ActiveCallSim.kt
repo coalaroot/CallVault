@@ -11,51 +11,101 @@ package com.baba.callvault.services.call
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.telecom.PhoneAccountHandle
+import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import androidx.core.content.IntentCompat
 import com.baba.callvault.system.permissions.PermissionChecks
 import com.baba.callvault.utils.AppLogger
 
 /**
  * Which SIM a call is on while it is still in progress.
  *
- * The phone-state broadcast does not document a SIM, and the call log is written only after the
- * call ends. Each active subscription has its own [TelephonyManager] via
- * [TelephonyManager.createForSubscriptionId](https://developer.android.com/reference/android/telephony/TelephonyManager#createForSubscriptionId(int));
- * [TelephonyManager.getCallState] on that instance is that subscription's state. When exactly one
- * subscription is off-hook, that is the call's SIM.
- *
- * [hint] is a slot read from broadcast extras some builds add (`slot`, or a subscription id). It
- * is used only when the per-subscription query cannot tell.
+ * [TelephonyManager.getCallState] is the state of every call on the device, so on a dual-SIM phone
+ * it reports off-hook for both subscriptions during any call. The sources here are the ones that
+ * name one SIM: the per-SIM phone-state broadcast, a callback registered per subscription, and
+ * [TelephonyManager.getCallStateForSubscription].
  */
 internal object ActiveCallSim {
 
     private const val TAG = "CV:RecordSim"
 
-    @SuppressLint("MissingPermission") // checked just below
-    fun slot(context: Context, hint: Int? = null): Int? {
-        val queried = query(context)
-        val hinted = hint?.takeIf { it > 0 }
-        // A per-subscription call-state that always names the default SIM hides the broadcast.
-        // The broadcast is about this state change, so a hint that disagrees wins.
-        val chosen = when {
-            hinted != null && queried != null && hinted != queried -> hinted
-            queried != null -> queried
-            else -> hinted
-        }
-        AppLogger.i(TAG, "live SIM query slot=${queried ?: "none"}, broadcast hint=${hinted ?: "none"} → ${chosen ?: "unknown"}")
+    /** Sent by the platform with `slot` and `subscription` when one SIM's call state changes. */
+    const val ACTION_SUBSCRIPTION_PHONE_STATE = "android.intent.action.SUBSCRIPTION_PHONE_STATE"
+
+    /**
+     * The 1-based slot to trust, or null.
+     *
+     * [outgoingSlot] is the SIM the user picked while dialling. [broadcastSlot] is from the
+     * phone-state intent. [registryDump] is `dumpsys telephony.registry`, used only when the
+     * in-process sources cannot tell the SIMs apart.
+     */
+    fun identify(context: Context, broadcastSlot: Int?, outgoingSlot: Int?, registryDump: String?): Int? {
+        val callback = SimCallCallbacks.busySlot()
+        val perSub = perSubscription(context)
+        val registry = RegistrySim.slotOf(registryDump)
+        val chosen = outgoingSlot ?: broadcastSlot ?: callback ?: perSub ?: registry
+        AppLogger.i(
+            TAG,
+            "SIM sources: outgoing=${outgoingSlot ?: "-"} broadcast=${broadcastSlot ?: "-"} " +
+                "callback=${callback ?: "-"} perSub=${perSub ?: "-"} registry=${registry ?: "-"} " +
+                "→ ${chosen ?: "unknown"}",
+        )
         return chosen
     }
 
-    /** A 1-based slot from extras some PHONE_STATE broadcasts carry, or null. */
+    /** Keys of [intent], with phone numbers left out. Written even when debug logging is off. */
+    fun logExtras(action: String?, intent: Intent) {
+        val extras = intent.extras
+        val body = if (extras == null || extras.isEmpty) {
+            "none"
+        } else {
+            extras.keySet().sorted().joinToString(" ") { key ->
+                val value = extras.get(key)
+                val shown = when (value) {
+                    is String -> if (value.count { it.isDigit() } >= 5) "redacted" else value.take(60)
+                    else -> value?.toString()?.take(80) ?: "null"
+                }
+                "$key=$shown"
+            }
+        }
+        AppLogger.i(TAG, "intent ${action ?: "?"} extras: $body")
+    }
+
+    /** A 1-based slot from extras some call broadcasts carry, or null. */
     fun hintFrom(context: Context, intent: Intent): Int? {
-        val phoneId = intent.getIntExtra("slot", -1)
-        if (phoneId >= 0) return phoneId + 1
+        val phoneId = listOf("slot", "slotId", "slot_id", SubscriptionManager.EXTRA_SLOT_INDEX)
+            .firstNotNullOfOrNull { key -> intent.getIntExtra(key, -1).takeIf { it >= 0 } }
+        if (phoneId != null) return phoneId + 1
         val subId = listOf(
-            intent.getIntExtra(SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX, -1),
-            intent.getIntExtra(TelephonyManager.EXTRA_SUBSCRIPTION_ID, -1),
-            intent.getIntExtra("subscription", -1),
-        ).firstOrNull { it >= 0 } ?: return null
+            "subscription",
+            "sub_id",
+            "subId",
+            TelephonyManager.EXTRA_SUBSCRIPTION_ID,
+            SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX,
+        ).firstNotNullOfOrNull { key -> intent.getIntExtra(key, -1).takeIf { it >= 0 } } ?: return null
+        return slotForSubId(context, subId)
+    }
+
+    /** The SIM of an outgoing call, from the dial intent, or null when the intent does not say. */
+    fun outgoingSlot(context: Context, intent: Intent): Int? {
+        hintFrom(context, intent)?.let { return it }
+        val handle = IntentCompat.getParcelableExtra(
+            intent,
+            TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE,
+            PhoneAccountHandle::class.java,
+        ) ?: return null
+        if (!PermissionChecks.hasPhoneStatePermission(context)) return null
+        val subId = runCatching {
+            context.getSystemService(TelephonyManager::class.java)?.getSubscriptionId(handle)
+        }.getOrNull()?.takeIf { it >= 0 } ?: return null
+        return slotForSubId(context, subId)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun slotForSubId(context: Context, subId: Int): Int? {
         if (!PermissionChecks.hasPhoneStatePermission(context)) return null
         val slot = runCatching {
             context.getSystemService(SubscriptionManager::class.java)
@@ -64,38 +114,33 @@ internal object ActiveCallSim {
         return slot?.takeIf { it >= 0 }?.plus(1)
     }
 
-    @SuppressLint("MissingPermission", "DEPRECATION") // permission checked; getCallState is the per-sub query
-    private fun query(context: Context): Int? {
+    /**
+     * The 1-based slot whose own subscription is not idle, or null.
+     *
+     * Uses [TelephonyManager.getCallStateForSubscription]. [TelephonyManager.getCallState] is not
+     * used: it asks Telecom for every call on the device, so both SIMs read as off-hook.
+     */
+    @SuppressLint("MissingPermission")
+    private fun perSubscription(context: Context): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
         if (!PermissionChecks.hasPhoneStatePermission(context)) return null
-        val infos = runCatching {
+        val subs = runCatching {
             context.getSystemService(SubscriptionManager::class.java)?.activeSubscriptionInfoList
         }.getOrNull().orEmpty()
-        if (infos.size < 2) {
-            AppLogger.i(TAG, "live SIM query: ${infos.size} active subscription(s); cannot tell SIMs apart")
-            return null
-        }
+        if (subs.size < 2) return null
         val tm = context.getSystemService(TelephonyManager::class.java) ?: return null
-        val active = infos.mapNotNull { info ->
-            val state = runCatching { tm.createForSubscriptionId(info.subscriptionId).callState }.getOrNull()
-            val slot = info.simSlotIndex.takeIf { it >= 0 }?.plus(1)
+        val busy = subs.mapNotNull { info ->
+            val slot = info.simSlotIndex.takeIf { it >= 0 }?.plus(1) ?: return@mapNotNull null
+            val state = runCatching {
+                tm.createForSubscriptionId(info.subscriptionId).callStateForSubscription
+            }.getOrNull()
             AppLogger.i(
                 TAG,
-                "subscription id=${info.subscriptionId} slot=${slot ?: "?"} " +
-                    "name='${info.displayName}' state=${stateName(state)}",
+                "per-sub id=${info.subscriptionId} slot=$slot name='${info.displayName}' state=${stateName(state)}",
             )
-            if (state == null || state == TelephonyManager.CALL_STATE_IDLE) null else info to state
+            if (state == null || state == TelephonyManager.CALL_STATE_IDLE) null else slot
         }
-        val offhook = active.filter { it.second == TelephonyManager.CALL_STATE_OFFHOOK }
-        val chosen = when {
-            offhook.size == 1 -> offhook[0].first
-            offhook.isEmpty() && active.size == 1 -> active[0].first
-            else -> null
-        }
-        val slot = chosen?.simSlotIndex?.takeIf { it >= 0 }?.plus(1)
-        if (slot == null) {
-            AppLogger.i(TAG, "live SIM query: ${offhook.size} off-hook, ${active.size} not idle; no single SIM")
-        }
-        return slot
+        return if (busy.size == 1) busy[0] else null
     }
 
     private fun stateName(state: Int?): String = when (state) {
