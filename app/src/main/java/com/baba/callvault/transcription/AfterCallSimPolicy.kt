@@ -17,18 +17,17 @@ package com.baba.callvault.transcription
  * because the log was late, or the permission missing, would lose a recording the user never
  * asked to lose.
  *
- * A slot that is not the chosen one is the "other SIM". Recording is never filtered at capture
- * start; this only describes the decision made after the call has ended.
+ * A slot that is not the chosen one is not transcribed. The recording is always kept:
+ * transcription settings never delete a recording. [otherDeletes] is ignored and remains only
+ * so an older stored choice cannot change this.
  */
 object AfterCallSimPolicy {
 
     data class Decision(val transcribe: Boolean, val deleteRecording: Boolean)
 
-    fun decide(targetSlot: Int?, otherDeletes: Boolean, resolvedSlot: Int?): Decision {
-        if (targetSlot == null || resolvedSlot == null || resolvedSlot == targetSlot) {
-            return Decision(transcribe = true, deleteRecording = false)
-        }
-        return Decision(transcribe = false, deleteRecording = otherDeletes)
+    fun decide(targetSlot: Int?, @Suppress("UNUSED_PARAMETER") otherDeletes: Boolean, resolvedSlot: Int?): Decision {
+        val transcribe = targetSlot == null || resolvedSlot == null || resolvedSlot == targetSlot
+        return Decision(transcribe = transcribe, deleteRecording = false)
     }
 }
 

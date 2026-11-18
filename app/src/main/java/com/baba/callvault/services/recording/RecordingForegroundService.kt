@@ -35,7 +35,6 @@ import com.baba.callvault.server.RecorderBackend
 import com.baba.callvault.R
 import com.baba.callvault.data.recordings.RecordingCatalog
 import com.baba.callvault.data.waveform.WaveformDrawWorker
-import com.baba.callvault.transcription.AfterCallSimGate
 import com.baba.callvault.transcription.TranscriptionScheduler
 import com.baba.callvault.data.recordings.RecordingDirection
 import com.baba.callvault.data.transcripts.SpeakerTurnsRepository
@@ -118,8 +117,8 @@ class RecordingForegroundService : Service() {
          */
         const val ACTION_MANUAL_START = "com.baba.callvault.MANUAL_START_RECORDING"
 
-        /** Automatic start whose SIM was not known: record, but do not say "Recording started". */
-        const val EXTRA_QUIET_START = "com.baba.callvault.EXTRA_QUIET_START"
+        /** SIM name for "Recording call — Treetopia", when the call's SIM was known at the start. */
+        const val EXTRA_SIM_LABEL = "com.baba.callvault.EXTRA_SIM_LABEL"
 
         /** Intent action sent to this service when the user dismisses the notification (Android 14+). */
         const val ACTION_NOTIFICATION_DISMISSED = "com.baba.callvault.SERVICE_NOTIFICATION_DISMISSED"
@@ -161,6 +160,9 @@ class RecordingForegroundService : Service() {
      */
     private var sharesStatusNotice = true
 
+    /** SIM name shown as "Recording call — …" while this recording is automatic and the SIM was known. */
+    private var simLabel: String? = null
+
     /** The current state of the service. */
     @Volatile
     private var currentState: RecordingServiceState = RecordingServiceState.Standby(null)
@@ -169,7 +171,7 @@ class RecordingForegroundService : Service() {
                 val oldState = field
                 field = value
                 updateNotification()
-                notificationHelper.handleStateChangeToasts(oldState, value, RecordSimGate.isQuiet())
+                notificationHelper.handleStateChangeToasts(oldState, value)
             }
         }
 
@@ -285,14 +287,9 @@ class RecordingForegroundService : Service() {
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
-        if (action == ACTION_MANUAL_START) RecordSimGate.beginManual()
-        else if (action == ACTION_START_RECORDING) {
-            RecordSimGate.beginAutomatic(intent.getBooleanExtra(EXTRA_QUIET_START, false))
-        } else if (action == ACTION_STANDBY) {
-            // A new call's offer must not inherit the previous call's quiet/manual flags.
-            RecordSimGate.beginAutomatic(false)
+        if (action == ACTION_START_RECORDING || action == ACTION_STANDBY) {
+            simLabel = intent.getStringExtra(EXTRA_SIM_LABEL)?.takeIf { it.isNotBlank() }
         }
-
         var currentMeta = currentState.metadata
 
         // Parse metadata if present in the intent (START/STANDBY)
@@ -498,7 +495,7 @@ class RecordingForegroundService : Service() {
                 ?.takeIf { opening == RecordingNoticePolicy.Opening.PREPARING }
                 ?.let { RecordingServiceState.Starting(it) }
                 ?: currentState
-            notificationHelper.getNotification(openingState, RecordSimGate.isQuiet())
+            notificationHelper.getNotification(openingState, simLabel)
         }
         startForegroundWithType(notification)
         return voipCall
@@ -936,18 +933,9 @@ class RecordingForegroundService : Service() {
         } else if (uriToRename != null) {
             // Phone number was already known at recording start — no rename needed.
             // Route the file with its current name immediately (once).
-            // Deleting the other SIM's recording waits on the call log, which is written only after
-            // the call ends. That wait must not run on this thread; everyone else stays here.
-            val route = {
-                routeFinalRecording(
-                    uriToRename, mimeType, activeSession.lastCapturedByteCount, originalMetadata?.direction, mix
-                )
-            }
-            if (AfterCallSimGate.mayBlockForDelete(applicationContext) || RecordSimGate.needsEndCheck(applicationContext)) {
-                CoroutineScope(Dispatchers.IO).launch { route() }
-            } else {
-                route()
-            }
+            routeFinalRecording(
+                uriToRename, mimeType, activeSession.lastCapturedByteCount, originalMetadata?.direction, mix
+            )
         }
         // A capture AudioFlinger invalidated mid-call can leave the microphone indicator on with nothing recording;
         // a few seconds from now this looks, and replaces the daemon if it is safe to. See [MicOpAutoHeal].
@@ -1174,14 +1162,6 @@ class RecordingForegroundService : Service() {
         // question and the cloud copy: a recording removed here must not be uploaded or asked about.
         // Off unless the user picked one SIM and "delete the other", so this returns immediately
         // for everyone else.
-        val otherSim = AfterCallSimGate.shouldDelete(applicationContext, name)
-        val wrongSim = RecordSimGate.shouldDiscard(applicationContext, name)
-        if (otherSim || wrongSim) {
-            val why = if (otherSim) "the other SIM" else "automatic recording is limited to another SIM"
-            SafHelper.deleteDocument(doc, "the recording '$name' ($why)")
-            return
-        }
-
         // Keep or delete after the call: decided ONCE, here, and both halves below follow it — the catalog
         // coroutine (details-file copy, transcription) and the synchronous Drive route after it. Held
         // before either starts, so no sweep can copy it in between. Not held — kept as in Keep mode — when
@@ -1283,7 +1263,7 @@ class RecordingForegroundService : Service() {
         // Stopping: the notification is on its way out, and posting it again would flash a state the
         // user has no use for — or re-promote a service that has already stopped itself.
         if (isShuttingDown) return
-        val notification = notificationHelper.getNotification(currentState, RecordSimGate.isQuiet())
+        val notification = notificationHelper.getNotification(currentState, simLabel)
         startForegroundWithType(notification)
     }
 

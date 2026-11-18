@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.baba.callvault.R
 import com.baba.callvault.data.AppPreferences
+import com.baba.callvault.data.calls.SimChoice
 import com.baba.callvault.data.calls.SimLabels
 import com.baba.callvault.ui.common.FileNameFormatDialog
 import com.baba.callvault.ui.common.M3DropdownField
@@ -80,7 +81,7 @@ internal fun RecordSimRow(preferences: AppPreferences, updateTrigger: Int) {
     val context = LocalContext.current
     val simWord = stringResource(R.string.sim_label_word)
     val sims = remember(updateTrigger) { SimLabels.activeSims(context, simWord) }
-    if (sims.size >= 2) RecordSimChoice(preferences, updateTrigger, simWord, sims)
+    RecordSimChoice(preferences, updateTrigger, simWord, sims)
 }
 
 @Composable
@@ -90,32 +91,41 @@ private fun RecordSimChoice(
     simWord: String,
     sims: List<SimLabels.Sim>,
 ) {
-    var slot by remember(updateTrigger) { mutableStateOf(preferences.getRecordAutoSimSlot()) }
-    val selected = slot
+    var choice by remember(updateTrigger) { mutableStateOf(preferences.getRecordAutoSim()) }
     val allLabel = stringResource(R.string.transcription_sim_all)
-    val options = buildList {
-        add(OptionItem("all", allLabel))
-        sims.forEach { sim -> sim.slot?.let { add(OptionItem(it.toString(), sim.label)) } }
-        if (selected != null && sims.none { it.slot == selected }) {
-            add(OptionItem(selected.toString(), "$simWord $selected"))
-        }
-    }
-    val selectedKey = selected?.toString() ?: "all"
+    val noneLabel = stringResource(R.string.record_sim_none)
+    val options = simOptions(sims, simWord, choice, allLabel, noneLabel)
     val label = stringResource(R.string.record_sim_label)
     DropdownRow {
         WithInfo(label, stringResource(R.string.record_sim_info)) {
             M3DropdownField(
                 label = label,
-                selected = options.find { it.key == selectedKey } ?: options.first(),
+                selected = options.find { it.key == choice.key } ?: options.first(),
                 options = options,
                 onOptionSelected = { picked ->
-                    val chosen = picked.key.toIntOrNull()?.takeIf { it > 0 }
-                    preferences.setRecordAutoSimSlot(chosen)
-                    slot = chosen
+                    val chosen = SimChoice.fromKey(picked.key)
+                    preferences.setRecordAutoSim(chosen)
+                    choice = chosen
                 },
             )
         }
     }
+}
+
+internal fun simOptions(
+    sims: List<SimLabels.Sim>,
+    simWord: String,
+    choice: SimChoice,
+    allLabel: String,
+    noneLabel: String,
+): List<OptionItem> = buildList {
+    add(OptionItem(SimChoice.All.key, allLabel))
+    sims.forEach { sim -> sim.slot?.let { add(OptionItem(it.toString(), sim.label)) } }
+    val only = choice as? SimChoice.Only
+    if (only != null && sims.none { it.slot == only.slot }) {
+        add(OptionItem(only.key, "$simWord ${only.slot}"))
+    }
+    add(OptionItem(SimChoice.None.key, noneLabel))
 }
 
 /**

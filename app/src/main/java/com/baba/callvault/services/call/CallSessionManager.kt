@@ -160,6 +160,9 @@ class CallSessionManager private constructor(context: Context) {
     /** 1-based slot from the phone-state broadcast, when the broadcast carried one. */
     private var simHint: Int? = null
 
+    /** This call was offered a Record button on purpose, so its end is not a missed recording. */
+    private var excusedUnrecorded = false
+
     private val temporaryCache = CallSessionTemporaryCache(appContext)
 
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -253,6 +256,12 @@ class CallSessionManager private constructor(context: Context) {
                 AppLogger.d(TAG, "Phone state is now idle (call ended). Sending stop INTENT for ${session.currentMetadata?.direction} call to RecordingForegroundService.")
                 sendServiceCommand(RecordingForegroundService.ACTION_STOP_RECORDING)
                 session.clear()
+            }
+            // A call we chose not to auto-record was still seen. Without this the status card
+            // reports it as "A call was not recorded", which is an error, not a choice.
+            if (excusedUnrecorded) {
+                SetupHealthStore(appContext).observeCall(System.currentTimeMillis())
+                excusedUnrecorded = false
             }
             this.simHint = null
             return
@@ -367,9 +376,8 @@ class CallSessionManager private constructor(context: Context) {
         }
         val sessionMetadata = session.currentMetadata ?: throw IllegalStateException("Metadata should have been determined by now. There is a logic error.")
 
-        // Automatic recording limited to one SIM. A known other SIM is not started; the Record
-        // button stays, and a tap is kept. An unknown SIM still records, without the
-        // "Recording started" announcement, and is removed if the call log names the other SIM.
+        // Auto-record is all SIMs, one SIM, or none. A known other SIM (or none) is not started;
+        // the notification offers Record, and a tap is kept. An unknown SIM is recorded and announced.
         val simDecision = RecordSimGate.onCallStarting(appContext, simHint)
 
         // IGNORE is genuinely "do nothing" — note that the OFFER branch is not: it posts a standby
@@ -384,20 +392,23 @@ class CallSessionManager private constructor(context: Context) {
 
             RecordingPolicy.CarrierAction.RECORD -> {
                 if (simDecision == RecordSimPolicy.Decision.OFFER) {
-                    AppLogger.i(TAG, "Other SIM: not starting ${sessionMetadata.direction}; offering Record.")
-                    sendServiceCommand(RecordingForegroundService.ACTION_STANDBY, sessionMetadata)
+                    excusedUnrecorded = true
+                    val label = RecordSimGate.labelOf(appContext, ActiveCallSim.slot(appContext, simHint))
+                    AppLogger.i(TAG, "Not auto-recording this ${sessionMetadata.direction} call; offering Record.")
+                    sendServiceCommand(RecordingForegroundService.ACTION_STANDBY, sessionMetadata, label)
                 } else {
-                    val quiet = simDecision == RecordSimPolicy.Decision.RECORD_QUIET
+                    excusedUnrecorded = false
                     reportGapIfPrerequisiteMissing(sessionMetadata)
+                    val label = RecordSimGate.labelOf(appContext, ActiveCallSim.slot(appContext, simHint))
                     if (sessionMetadata.direction == RecordingDirection.OUTGOING && preferences.isRecordFromAnswerEnabled()) {
                         // Standby warms the daemon at the dial, exactly as it does for a call that is
                         // offered rather than recorded; the start follows when the far end picks up.
                         AppLogger.i(TAG, "Sending standby INTENT for ${sessionMetadata.direction} call; recording starts when it is answered.")
                         sendServiceCommand(RecordingForegroundService.ACTION_STANDBY, sessionMetadata)
-                        answerJob = managerScope.launch { startWhenAnswered(sessionMetadata, quiet) }
+                        answerJob = managerScope.launch { startWhenAnswered(sessionMetadata, label) }
                     } else {
-                        AppLogger.i(TAG, "Sending start INTENT for ${sessionMetadata.direction} call to RecordingForegroundService (quiet=$quiet).")
-                        sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, sessionMetadata, quiet)
+                        AppLogger.i(TAG, "Sending start INTENT for ${sessionMetadata.direction} call to RecordingForegroundService.")
+                        sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, sessionMetadata, label)
                     }
                 }
             }
@@ -468,7 +479,7 @@ class CallSessionManager private constructor(context: Context) {
      * ACTIVE. Every outcome but "still ringing" starts the recording — a host that cannot say, or a
      * wait that runs too long, must not cost the call. See [AnswerWait] for the rule.
      */
-    private suspend fun startWhenAnswered(metadata: RecordingMetadata, quiet: Boolean) {
+    private suspend fun startWhenAnswered(metadata: RecordingMetadata, simLabel: String?) {
         val startedAt = System.currentTimeMillis()
         var polls = 0
         while (true) {
@@ -487,20 +498,20 @@ class CallSessionManager private constructor(context: Context) {
                     else -> "call answered"
                 }
                 AppLogger.i(TAG, "Sending start INTENT for ${metadata.direction} call after $polls polls: $why (state=$state, ${elapsed}ms).")
-                sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, metadata, quiet)
+                sendServiceCommand(RecordingForegroundService.ACTION_START_RECORDING, metadata, simLabel)
                 return
             }
             delay(AnswerWait.POLL_MS)
         }
     }
 
-    private fun sendServiceCommand(action: String, metadata: RecordingMetadata? = null, quiet: Boolean = false) {
+    private fun sendServiceCommand(action: String, metadata: RecordingMetadata? = null, simLabel: String? = null) {
         val intent = Intent(appContext, RecordingForegroundService::class.java).apply {
             this.action = action
             if (metadata != null) {
                 putExtra(RecordingMetadata.EXTRA_METADATA, metadata)
             }
-            if (quiet) putExtra(RecordingForegroundService.EXTRA_QUIET_START, true)
+            if (!simLabel.isNullOrBlank()) putExtra(RecordingForegroundService.EXTRA_SIM_LABEL, simLabel)
         }
         if (action == RecordingForegroundService.ACTION_STOP_RECORDING) {
             // When Stopping, we use StartService as we assume the service is already running from startForegroundService. We only send it a new Intent that trigger cleanup.

@@ -90,7 +90,7 @@ class RecordingNotificationHelper(private val context: Context) {
         manager.createNotificationChannel(errorChannel)
     }
 
-    fun getNotification(state: RecordingServiceState, quiet: Boolean = false): Notification {
+    fun getNotification(state: RecordingServiceState, simLabel: String? = null): Notification {
         val titleRes: Int
         val contentRes: Int
         // A list, not one slot. The notification is the only control surface during a call — the
@@ -104,8 +104,8 @@ class RecordingNotificationHelper(private val context: Context) {
 
         when (state) {
             is RecordingServiceState.Starting -> {
-                titleRes = R.string.recording_standby_notification_title
-                contentRes = R.string.recording_notification_waiting
+                titleRes = R.string.recording_notification_title
+                contentRes = R.string.recording_started
             }
             is RecordingServiceState.Active -> {
                 if (state.isPaused) {
@@ -116,10 +116,6 @@ class RecordingNotificationHelper(private val context: Context) {
                         context.getString(R.string.general_resume),
                         RecordingForegroundService.ACTION_RESUME_RECORDING
                     )
-                } else if (quiet) {
-                    // Provisional: the SIM was not known, so this must not read as "Recording started".
-                    titleRes = R.string.recording_standby_notification_title
-                    contentRes = R.string.recording_notification_waiting
                 } else {
                     titleRes = R.string.recording_notification_title
                     contentRes = R.string.recording_notification_press_to_pause
@@ -153,7 +149,7 @@ class RecordingNotificationHelper(private val context: Context) {
             }
             else -> {
                 titleRes = R.string.recording_standby_notification_title
-                contentRes = R.string.recording_notification_press_to_start
+                contentRes = R.string.recording_notification_not_recording
                 actions += NotificationAction(
                     R.drawable.ic_mic,
                     context.getString(R.string.general_record),
@@ -174,7 +170,16 @@ class RecordingNotificationHelper(private val context: Context) {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID_SERVICE)
             .setSmallIcon(R.drawable.ic_mic)
             .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
-            .setContentTitle(context.getString(titleRes))
+            .setContentTitle(
+                if (!simLabel.isNullOrBlank() &&
+                    (state is RecordingServiceState.Starting ||
+                        (state is RecordingServiceState.Active && !state.isPaused))
+                ) {
+                    context.getString(R.string.recording_notification_title_sim, simLabel)
+                } else {
+                    context.getString(titleRes)
+                }
+            )
             .setContentText(context.getString(contentRes))
             .setSubText(context.getString(subRes))
             .setOngoing(true) // Almost useless starting Android 14+ :)
@@ -183,7 +188,7 @@ class RecordingNotificationHelper(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)
-            .setSilent(quiet || state is RecordingServiceState.Active || state is RecordingServiceState.Starting) // Don't do a screen-incursion if we are already recording.
+            .setSilent(state is RecordingServiceState.Active || state is RecordingServiceState.Starting) // Don't do a screen-incursion if we are already recording.
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
 
         actions.forEach { notifAction ->
@@ -246,17 +251,13 @@ class RecordingNotificationHelper(private val context: Context) {
      * @param oldState The previous state of the recording service.
      * @param newState The new state of the recording service.
      */
-    fun handleStateChangeToasts(
-        oldState: RecordingServiceState,
-        newState: RecordingServiceState,
-        quiet: Boolean = false,
-    ) {
+    fun handleStateChangeToasts(oldState: RecordingServiceState, newState: RecordingServiceState) {
         if (oldState == newState) return // Ignore duplicates
 
         when (newState) {
             is RecordingServiceState.Standby -> {
                 if (newState.metadata == null) {
-                    if (!quiet) showRecordingEnded()
+                    showRecordingEnded()
                 } else if (oldState !is RecordingServiceState.Standby) {
                     val dirLabel = newState.metadata.direction.labelResId.let { context.getString(it) }
                     showToast(context.getString(R.string.recording_toast_standby, dirLabel))
@@ -274,7 +275,7 @@ class RecordingNotificationHelper(private val context: Context) {
                     // Recording was resumed
                     showToast(context.getString(R.string.recording_toast_resumed))
                     vibrate(STATE_CHANGE_VIBRATION)
-                } else if (!newState.isPaused && !wasActive && !quiet) {
+                } else if (!newState.isPaused && !wasActive) {
                     showRecordingStarted()
                 }
             }

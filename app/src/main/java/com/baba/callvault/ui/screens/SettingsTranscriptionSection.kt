@@ -27,8 +27,8 @@ import com.baba.callvault.transcription.model.ModelRepository
 import com.baba.callvault.transcription.model.TranscriptionModel
 import com.baba.callvault.transcription.model.TranscriptionModelOffer
 import androidx.compose.ui.platform.LocalContext
+import com.baba.callvault.data.calls.SimChoice
 import com.baba.callvault.data.calls.SimLabels
-import com.baba.callvault.transcription.OtherSimAction
 import com.baba.callvault.transcription.TranscriptionLanguageChoice
 import com.baba.callvault.ui.common.TranscriptionLabels
 import com.baba.callvault.ui.common.TranscriptionLanguagePicker
@@ -208,7 +208,7 @@ private fun TranscriptionSimChoices(preferences: AppPreferences, updateTrigger: 
     val context = LocalContext.current
     val simWord = stringResource(R.string.sim_label_word)
     val sims = remember(updateTrigger) { SimLabels.activeSims(context, simWord) }
-    if (sims.size >= 2) TranscriptionSimChoiceFields(preferences, updateTrigger, simWord, sims)
+    TranscriptionSimChoiceFields(preferences, updateTrigger, simWord, sims)
 }
 
 @Composable
@@ -218,61 +218,28 @@ private fun TranscriptionSimChoiceFields(
     simWord: String,
     sims: List<SimLabels.Sim>,
 ) {
-    var slot by remember(updateTrigger) { mutableStateOf(preferences.getTranscriptionAfterCallSimSlot()) }
-    var other by remember(updateTrigger) { mutableStateOf(preferences.getTranscriptionOtherSim()) }
-    val selectedSlot = slot
-    val allLabel = stringResource(R.string.transcription_sim_all)
-    val options = buildList {
-        add(OptionItem(ALL_SIMS, allLabel))
-        sims.forEach { sim -> sim.slot?.let { add(OptionItem(it.toString(), sim.label)) } }
-        if (selectedSlot != null && sims.none { it.slot == selectedSlot }) {
-            add(OptionItem(selectedSlot.toString(), "$simWord $selectedSlot"))
-        }
-    }
-    val selectedKey = selectedSlot?.toString() ?: ALL_SIMS
+    var choice by remember(updateTrigger) { mutableStateOf(preferences.getTranscriptionAutoSim()) }
+    val options = simOptions(
+        sims, simWord, choice,
+        stringResource(R.string.transcription_sim_all),
+        stringResource(R.string.transcription_sim_none),
+    )
     val label = stringResource(R.string.transcription_sim_label)
-    val explanation = stringResource(R.string.transcription_sim_info)
-
     DropdownRow {
-        WithInfo(label, explanation) {
+        WithInfo(label, stringResource(R.string.transcription_sim_info)) {
             M3DropdownField(
                 label = label,
-                selected = options.find { it.key == selectedKey } ?: options.first(),
+                selected = options.find { it.key == choice.key } ?: options.first(),
                 options = options,
                 onOptionSelected = { picked ->
-                    val chosen = picked.key.toIntOrNull()?.takeIf { it > 0 }
-                    preferences.setTranscriptionAfterCallSimSlot(chosen)
-                    slot = chosen
+                    val chosen = SimChoice.fromKey(picked.key)
+                    preferences.setTranscriptionAutoSim(chosen)
+                    choice = chosen
                 },
             )
         }
     }
-    if (selectedSlot != null) {
-        val keepLabel = stringResource(R.string.settings_after_call_mode_keep)
-        val deleteLabel = stringResource(R.string.transcription_sim_other_delete)
-        val otherLabel = stringResource(R.string.transcription_sim_other_label)
-        val otherOptions = listOf(
-            OptionItem(OtherSimAction.KEEP.key, keepLabel),
-            OptionItem(OtherSimAction.DELETE.key, deleteLabel),
-        )
-        DropdownRow {
-            WithInfo(otherLabel, explanation) {
-                M3DropdownField(
-                    label = otherLabel,
-                    selected = otherOptions.first { it.key == other.key },
-                    options = otherOptions,
-                    onOptionSelected = { picked ->
-                        val chosen = OtherSimAction.fromKey(picked.key)
-                        preferences.setTranscriptionOtherSim(chosen)
-                        other = chosen
-                    },
-                )
-            }
-        }
-    }
 }
-
-private const val ALL_SIMS = "all"
 
 /** The paragraph saying what the chosen mode means in practice. */
 @Composable

@@ -123,6 +123,18 @@ object SimLabels {
     }
 
     /**
+     * The slot of the call that just ended, or null.
+     *
+     * Uses [PhoneCallMatch.justEnded], so a previous call a minute earlier is not this call.
+     * Null means the SIM is unknown, never that it was the previous call's SIM.
+     */
+    fun slotForJustEnded(context: Context, startedAt: Long, simWord: String): Int? {
+        val calls = PhoneCallReader.since(context, startedAt - PhoneCallMatch.JUST_ENDED_START_SLOP_MS)
+        val call = PhoneCallMatch.justEnded(calls, startedAt) ?: return null
+        return Resolver(context, simWord).simFor(call.accountComponent, call.accountId)?.slot
+    }
+
+    /**
      * The SIMs currently in use, named the same way a call's label is. Empty when fewer than two
      * are active, so a one-SIM phone has nothing to choose.
      *

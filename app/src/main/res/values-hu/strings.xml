@@ -362,8 +362,8 @@
     <string name="settings_audio_source">Hangforrás</string>
     <string name="settings_auto_record_incoming">Bejövő telefonhívások automatikus rögzítése</string>
     <string name="settings_auto_record_outgoing">Kimenő telefonhívások automatikus rögzítése</string>
-    <string name="record_sim_info">Az automatikus felvétel csak a kiválasztott SIM-re indul. A másik SIM hívása nem kerül rögzítésre. Ha a SIM a kezdetkor nem azonosítható, a hívás rögzül, majd törlődik, és nem jelenik meg a listában.</string>
-    <string name="record_sim_label">Automatikus felvétel csak ennél</string>
+    <string name="record_sim_info">Minden hívás, csak egy SIM, vagy egyik sem. A többinél a Felvétel gomb látszik. Ha a SIM a kezdetkor nem azonosítható, a hívás rögzül.</string>
+    <string name="record_sim_label">Automatikus felvétel</string>
     <string name="settings_backup_desc">Mentsd a beállításaidat egy fájlba, vagy állítsd vissza egy fájlból.</string>
     <string name="settings_backup_title">Beállítások mentése</string>
     <string name="settings_bugreport_active_warning">A hibakeresési naplózás BE van kapcsolva. Ne felejtse el kikapcsolni, ha végzett, hogy helyet takarítson meg.</string>
@@ -778,8 +778,8 @@
     <string name="transcription_mode_after_each_call">Minden hívás után</string>
     <string name="transcription_mode_automatic">Ütemezve</string>
     <string name="transcription_sim_all">Minden SIM</string>
-    <string name="transcription_sim_info">Csak a kiválasztott SIM hívásai kerülnek átírásra a végén. A másik SIM hívása megőrizhető vagy törölhető. Ha a SIM nem azonosítható, a hívás átírásra kerül és megmarad.</string>
-    <string name="transcription_sim_label">Átírás minden hívás után csak ennél</string>
+    <string name="transcription_sim_info">Minden hívás után minden SIM, egy SIM, vagy egyik sem. A többit a listából lehet átírni. Felvételt nem töröl.</string>
+    <string name="transcription_sim_label">Automatikus átírás</string>
     <string name="transcription_sim_other_delete">Felvétel törlése</string>
     <string name="transcription_sim_other_label">A másik SIM hívásaira</string>
     <string name="transcription_mode_label">Átírás</string>
@@ -922,4 +922,8 @@
     <string name="settings_debug_force_wifi_route_description">Teszteléshez. Minden telefonhívás hívás közben átvált az alkalmazáshívás-rögzítésre, ahogy egy Wi-Fi-hívás tenné. Wi-Fi-hívás nélküli telefonon a másik fél hiányozni fog, és hibának kell megjelennie. Bekapcsolt alkalmazáshívás-rögzítés kell hozzá. Csak bekapcsolt naplózás mellett működik.</string>
     <string name="wifi_call_switch_aborted">Ennek a Wi-Fi-hívásnak a rögzítése idő előtt leállt: a felvételt nem lehetett biztonságosan átváltani. Az eddig rögzített rész megmarad.</string>
     <string name="wifi_call_far_unknown">Ez a Wi-Fi-hívás rögzítve lett, de a CallVault nem tudta ellenőrizni, hogy a másik fél hallható-e rajta. Kérjük, hallgassa meg a felvételt.</string>
+    <string name="record_sim_none">Nincs — csak kézi</string>
+    <string name="recording_notification_not_recording">Nincs felvétel</string>
+    <string name="recording_notification_title_sim">Hívás felvétele — %1$s</string>
+    <string name="transcription_sim_none">Nincs</string>
 </resources>

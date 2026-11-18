@@ -17,6 +17,7 @@ import com.baba.callvault.integrations.scrcpy.ScrcpyAudioCodec
 import com.baba.callvault.integrations.scrcpy.ScrcpyAudioSource
 import com.baba.callvault.data.StorageTarget
 import com.baba.callvault.data.SyncScheduleMode
+import com.baba.callvault.data.calls.SimChoice
 import com.baba.callvault.transcription.OtherSimAction
 import com.baba.callvault.transcription.TranscriptionEstimate
 import com.baba.callvault.transcription.TranscriptionLanguageChoice
@@ -366,7 +367,7 @@ class AppPreferences(context: Context) {
         TRANSCRIPTION_MODEL_ID("transcription_model_id"),
         TRANSCRIPTION_LANGUAGE("transcription_language"),
         TRANSCRIPTION_ASK_LANGUAGE("transcription_ask_language"),
-        /** 1-based slot, or "all". See [getTranscriptionAfterCallSimSlot]. */
+        /** "all", "none", or a 1-based slot. See [getTranscriptionAutoSim]. */
         TRANSCRIPTION_AFTER_CALL_SIM("transcription_after_call_sim"),
         TRANSCRIPTION_OTHER_SIM("transcription_other_sim"),
         // Where calls are written out (#48). Device-only, deliberately NOT in EXPORTABLE_KEYS: the key
@@ -435,7 +436,7 @@ class AppPreferences(context: Context) {
         AUTO_RECORD_INCOMING("auto_record_incoming"),
         AUTO_RECORD_OUTGOING("auto_record_outgoing"),
         RECORD_FROM_ANSWER("record_from_answer"),
-        /** 1-based slot, or "all". See [getRecordAutoSimSlot]. */
+        /** "all", "none", or a 1-based slot. See [getRecordAutoSim]. */
         RECORD_AUTO_SIM("record_auto_sim"),
         AFTER_CALL_MODE("after_call_mode"),
         AFTER_CALL_ASK_STYLE("after_call_ask_style"),
@@ -857,23 +858,17 @@ class AppPreferences(context: Context) {
     /** Sets when calls are transcribed. */
     fun setTranscriptionMode(mode: TranscriptionMode) = setString(Key.TRANSCRIPTION_MODE, mode.key)
 
+    /** After each call: all SIMs, one slot, or none. "all" is the default. "none" transcribes nothing automatically. */
+    fun getTranscriptionAutoSim(): SimChoice =
+        SimChoice.fromKey(getString(Key.TRANSCRIPTION_AFTER_CALL_SIM, DefaultsValue.TRANSCRIPTION_AFTER_CALL_SIM))
+
+    fun setTranscriptionAutoSim(choice: SimChoice) =
+        setString(Key.TRANSCRIPTION_AFTER_CALL_SIM, choice.key)
+
     /**
-     * The 1-based SIM slot whose calls are transcribed when a call ends, or null for every SIM.
-     * Null is the default, so an existing install is unchanged (issue #81).
+     * Old "keep or delete the other SIM" choice. Still stored so an export round-trips, and ignored:
+     * transcription never deletes a recording.
      */
-    fun getTranscriptionAfterCallSimSlot(): Int? =
-        getString(Key.TRANSCRIPTION_AFTER_CALL_SIM, DefaultsValue.TRANSCRIPTION_AFTER_CALL_SIM)
-            ?.toIntOrNull()
-            ?.takeIf { it > 0 }
-
-    /** Limits after-call transcription to [slot] (1-based), or to every SIM when [slot] is null. */
-    fun setTranscriptionAfterCallSimSlot(slot: Int?) =
-        setString(
-            Key.TRANSCRIPTION_AFTER_CALL_SIM,
-            slot?.takeIf { it > 0 }?.toString() ?: DefaultsValue.TRANSCRIPTION_AFTER_CALL_SIM,
-        )
-
-    /** What to do with a recording on a SIM other than [getTranscriptionAfterCallSimSlot]. */
     fun getTranscriptionOtherSim(): OtherSimAction =
         OtherSimAction.fromKey(getString(Key.TRANSCRIPTION_OTHER_SIM, DefaultsValue.TRANSCRIPTION_OTHER_SIM))
 
@@ -1452,18 +1447,11 @@ class AppPreferences(context: Context) {
     /** Sets whether auto-recording for outgoing calls is enabled. */
     fun setAutoRecordOutgoingEnabled(enabled: Boolean) = setBoolean(Key.AUTO_RECORD_OUTGOING, enabled)
 
-    /**
-     * The 1-based SIM slot that automatic phone-call recording is limited to, or null for every SIM.
-     * Null is the default, so an existing install records as before.
-     */
-    fun getRecordAutoSimSlot(): Int? =
-        getString(Key.RECORD_AUTO_SIM, DefaultsValue.RECORD_AUTO_SIM)
-            ?.toIntOrNull()
-            ?.takeIf { it > 0 }
+    /** Automatic phone-call recording: all SIMs, one slot, or none (manual only). "all" is the default. */
+    fun getRecordAutoSim(): SimChoice =
+        SimChoice.fromKey(getString(Key.RECORD_AUTO_SIM, DefaultsValue.RECORD_AUTO_SIM))
 
-    /** Limits automatic phone-call recording to [slot] (1-based), or to every SIM when [slot] is null. */
-    fun setRecordAutoSimSlot(slot: Int?) =
-        setString(Key.RECORD_AUTO_SIM, slot?.takeIf { it > 0 }?.toString() ?: DefaultsValue.RECORD_AUTO_SIM)
+    fun setRecordAutoSim(choice: SimChoice) = setString(Key.RECORD_AUTO_SIM, choice.key)
 
     /**
      * Whether an outgoing phone call is recorded from the moment it is answered rather than from the

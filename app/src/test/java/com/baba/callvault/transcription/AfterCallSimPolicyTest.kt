@@ -11,10 +11,10 @@ package com.baba.callvault.transcription
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.baba.callvault.data.AppPreferences
+import com.baba.callvault.data.calls.SimChoice
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,15 +34,16 @@ class AfterCallSimPolicyTest {
     @After
     fun reset() {
         val prefs = AppPreferences(context)
-        prefs.setTranscriptionAfterCallSimSlot(null)
+        prefs.setTranscriptionAutoSim(SimChoice.All)
         prefs.setTranscriptionOtherSim(OtherSimAction.KEEP)
-        prefs.setRecordAutoSimSlot(null)
+        prefs.setRecordAutoSim(SimChoice.All)
     }
 
     @Test
     fun defaults_are_every_sim_and_keep() {
         val prefs = AppPreferences(context)
-        assertNull(prefs.getTranscriptionAfterCallSimSlot())
+        assertEquals(SimChoice.All, prefs.getTranscriptionAutoSim())
+        assertEquals(SimChoice.All, prefs.getRecordAutoSim())
         assertEquals(OtherSimAction.KEEP, prefs.getTranscriptionOtherSim())
         assertEquals("all", AppPreferences.DefaultsValue.TRANSCRIPTION_AFTER_CALL_SIM)
     }
@@ -50,12 +51,15 @@ class AfterCallSimPolicyTest {
     @Test
     fun a_stored_slot_round_trips_and_all_clears_it() {
         val prefs = AppPreferences(context)
-        prefs.setTranscriptionAfterCallSimSlot(2)
+        prefs.setTranscriptionAutoSim(SimChoice.Only(2))
         prefs.setTranscriptionOtherSim(OtherSimAction.DELETE)
-        assertEquals(2, AppPreferences(context).getTranscriptionAfterCallSimSlot())
+        assertEquals(SimChoice.Only(2), AppPreferences(context).getTranscriptionAutoSim())
+        // An old "delete the other SIM" value is still stored, and is ignored.
         assertEquals(OtherSimAction.DELETE, AppPreferences(context).getTranscriptionOtherSim())
-        prefs.setTranscriptionAfterCallSimSlot(null)
-        assertNull(prefs.getTranscriptionAfterCallSimSlot())
+        prefs.setTranscriptionAutoSim(SimChoice.None)
+        assertEquals(SimChoice.None, prefs.getTranscriptionAutoSim())
+        prefs.setTranscriptionAutoSim(SimChoice.All)
+        assertEquals(SimChoice.All, prefs.getTranscriptionAutoSim())
         assertEquals(OtherSimAction.KEEP, OtherSimAction.fromKey("nope"))
     }
 
@@ -83,13 +87,13 @@ class AfterCallSimPolicyTest {
     }
 
     @Test
-    fun the_other_sim_is_not_transcribed_and_kept_unless_delete_was_chosen() {
+    fun the_other_sim_is_not_transcribed_and_the_recording_is_kept() {
         val keep = AfterCallSimPolicy.decide(targetSlot = 1, otherDeletes = false, resolvedSlot = 2)
         assertFalse(keep.transcribe)
         assertFalse(keep.deleteRecording)
 
-        val delete = AfterCallSimPolicy.decide(targetSlot = 2, otherDeletes = true, resolvedSlot = 1)
-        assertFalse(delete.transcribe)
-        assertTrue(delete.deleteRecording)
+        val storedDelete = AfterCallSimPolicy.decide(targetSlot = 2, otherDeletes = true, resolvedSlot = 1)
+        assertFalse(storedDelete.transcribe)
+        assertFalse("transcription settings never delete a recording", storedDelete.deleteRecording)
     }
 }

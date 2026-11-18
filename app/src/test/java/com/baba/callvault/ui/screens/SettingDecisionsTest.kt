@@ -47,7 +47,7 @@ class SettingDecisionsTest {
         "auto_record_incoming" to Decision(Wizard(WizardStep.AUTO_RECORD)),
         "auto_record_outgoing" to Decision(Wizard(WizardStep.AUTO_RECORD)),
         "record_from_answer" to Decision(SettingsOnly("a refinement of outgoing recording; the default is right for most")),
-        "record_auto_sim" to Decision(SettingsOnly("only matters on dual-SIM phones; all SIMs by default, so existing installs record every call")),
+        "record_auto_sim" to Decision(SettingsOnly("all SIMs, one SIM, or none; all by default so existing installs record every call")),
         // Keep or delete after the call (2026-11-06): a way of working a new user would never discover alone.
         "after_call_mode" to Decision(Wizard(WizardStep.AUTO_RECORD)),
         "after_call_ask_style" to Decision(Wizard(WizardStep.AUTO_RECORD)), // shown once Ask is on (maintainer, 2026-11-07)
@@ -105,9 +105,9 @@ class SettingDecisionsTest {
         "transcription_model_id" to Decision(Wizard(WizardStep.TRANSCRIPTION)),
         "transcription_language" to Decision(Wizard(WizardStep.TRANSCRIPTION)),
         "transcription_ask_language" to Decision(SettingsOnly("for multilingual phones, after the pin is chosen")),
-        // Issue #81. Hidden unless the phone has two SIMs and transcription runs after each call.
-        "transcription_after_call_sim" to Decision(SettingsOnly("only matters on dual-SIM phones, and only for after-each-call; all SIMs by default")),
-        "transcription_other_sim" to Decision(SettingsOnly("only matters once a single SIM is chosen; keep by default")),
+        // After each call: all SIMs, one SIM, or none. The old other-SIM keep/delete value is ignored.
+        "transcription_after_call_sim" to Decision(SettingsOnly("all SIMs, one SIM, or none; all by default, and only for after-each-call")),
+        "transcription_other_sim" to Decision(SettingsOnly("retired: a stored keep/delete choice is ignored; transcription never deletes a recording")),
         "summary_confirm_requirements" to Decision(SettingsOnly("asked at the first summary instead")),
         "summary_language" to Decision(SettingsOnly("follows the transcription language")),
         // App (VoIP) calls
